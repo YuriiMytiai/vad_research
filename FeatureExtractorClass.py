@@ -3,6 +3,7 @@ import scipy.signal
 import numpy as np
 import librosa
 import librosa.display
+import h5py
 
 
 class FeatureExtractor:
@@ -10,56 +11,65 @@ class FeatureExtractor:
     fft_size = 4096
     fft_overlap = 1024
     window = True
+    segment_len = fs * 0.5
 
-    def __init__(self, fs=16000, fft_size=4096, fft_overlap=1024, window=True):
+    def __init__(self, fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True):
         self.fs = fs
         self.fft_size = fft_size
         self.fft_overlap = fft_overlap
         self.window = window
+        self.segment_len = segment_len
 
-    def extract_features_from_wav(self, wav_file):
+
+    def extract_features_from_wav(self, wav_file, h5_filename, dataset_name):
+        event_file = wav_file[:-3] + 'eventlab'
+        speech_time_stamps = self.extract_labels_from_eventlab(event_file)
         file_fs, data = scipy.io.wavfile.read(wav_file)
+        if file_fs != self.fs:
+            data = librosa.resample(data, file_fs, self.fs)
         data = data - np.mean(data)
         k = 1.0 / np.max(data)
         data = data * k
         data = np.asarray(data)
-        if file_fs != self.fs:
-            data = librosa.resample(data, file_fs, self.fs)
 
-        buffered_data = self.buffer_signal(data)
-        normalized_data = self.normalization(buffered_data)
+        num_segments = data.shape[0] // self.segment_len
+        zeros = np.zeros(data.shape[0] % self.segment_len)
+        data = np.append(data, zeros)
+        start_idx = 0
 
-        spectrogram = self.calculate_spectrum(normalized_data)
-        return spectrogram
+        spectrograms = np.zeros((num_segments, 21, self.fft_size // 2))
+        labels = np.zeros(num_segments)
+        for i in range(0, num_segments):
+            end_idx = start_idx + self.segment_len
+            buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
+            normalized_data = self.normalization(buffered_data_segment)
+            spectrogram = self.calculate_spectrum(normalized_data)
+            spectrograms[i, :, :] = spectrogram
+            labels[i] = self.read_label(start_idx, end_idx, speech_time_stamps)
+
+            start_idx = (i + 1)*self.segment_len
+
+        with h5py.File(h5_filename, "w") as h5file:
+            h5file.create_dataset(dataset_name, spectrograms.shape, spectrograms.dtype, spectrograms)
+            label_dataset_name = dataset_name + '_labels'
+            h5file.create_dataset(label_dataset_name, labels.shape, labels.dtype, labels)
+
+
 
     def extract_labels_from_eventlab(self, event_file):
-        step = self.fft_size - self.fft_overlap
-        labels = []
-        label = [0]
-        np.asarray(labels)
-        rest = 0
+        speech_time_stamps = []
         with open(event_file, 'r') as file:
             for line in file:
                 cells = line.split(' ')
                 start_idx = int(float(cells[0]) * self.fs)
                 end_idx = int(float(cells[1]) * self.fs)
 
-                label_len = end_idx - start_idx + rest
-                num_of_chunks = label_len // step
-                rest = label_len % step
-                if num_of_chunks == 0:
-                    continue
                 if cells[2] == 'speech\n':
-                    label[0] = 1
-                    labels = np.concatenate([labels, np.ones(num_of_chunks)])
-                elif cells[2] == 'nonspeech\n':
-                    label[0] = 0
-                    labels = np.concatenate([labels, np.zeros(num_of_chunks)])
-                else:
-                    raise ValueError("Unexpected label in file {}".format(event_file))
-        if rest > 0:
-            labels = np.concatenate([labels, np.asarray(label)])
-        return labels
+                    speech_time_stamps += [(start_idx, end_idx)]
+        return np.asarray(speech_time_stamps)
+
+
+
 
     def buffer_signal(self, sig):
         buffered_sig = []
@@ -117,3 +127,11 @@ class FeatureExtractor:
         plt.title('Mel spectrogram')
         plt.tight_layout()
         plt.show()
+
+    def read_label(self, start_idx, end_idx, speech_time_stamps):
+        for i in range(0, speech_time_stamps.shape[0]):
+            if start_idx >= speech_time_stamps[i, 0] | start_idx <= speech_time_stamps[i, 1]:
+                return 1
+            elif end_idx >= speech_time_stamps[i, 0] | end_idx <= speech_time_stamps[i, 1]:
+                return 1
+        return 0
