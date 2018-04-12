@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 import os
 import glob
 import h5py
+import tqdm
 
 def collect_h5_files(path):
     files_list = []
@@ -26,34 +27,32 @@ validation_files = collect_h5_files(path_to_validation_h5)
 
 def _read_train_py_function(filename):
     with h5py.File(filename, 'r') as f:
-        spectrogram = f['train_data']
-        spectrogram.astype(np.float32)
-        label = f['train_data_labels']
-        label.astype(np.float32)
+        spectrogram = f['train_data'].value
+        spectrogram = np.float32(spectrogram)
+        label = f['train_data_labels'].value
+        label = np.float32(label)
     return spectrogram, label
 
 
 def _read_validation_py_function(filename):
     with h5py.File(filename, 'r') as f:
-        spectrogram = f['validation_data']
-        spectrogram.astype(np.float32)
-        label = f['validation_data_labels']
-        label.astype(np.float32)
+        spectrogram = f['validation_data'].value
+        spectrogram = np.float32(spectrogram)
+        label = f['validation_data_labels'].value
+        label = np.float32(label)
     return spectrogram, label
 
 
 batch_size = 10
 num_epochs = 10
-train_dataset = tf.data.Dataset.from_tensors(train_files)
+train_dataset = tf.data.Dataset.from_tensor_slices(train_files)
 train_dataset = train_dataset.map(
     lambda filename: tuple(tf.py_func(
         _read_train_py_function, [filename], [tf.float32, tf.float32])))
 train_dataset = train_dataset.repeat(num_epochs)
 #train_dataset = train_dataset.padded_batch(batch_size)
 
-
-
-validation_dataset = tf.data.Dataset.from_tensors(validation_files)
+validation_dataset = tf.data.Dataset.from_tensor_slices(validation_files)
 validation_dataset = validation_dataset.map(
     lambda filename: tuple(tf.py_func(
         _read_validation_py_function, [filename], [tf.float32, tf.float32])))
@@ -125,11 +124,11 @@ sess.run(init)
 # validation dataset.
 print('Start training...\n')
 
-for i in range(4800):
+for i in tqdm.tqdm(range(len(train_files))):
   # Initialize an iterator over the training dataset.
   sess.run(training_init_op)
-  for _ in range(100):
-    sess.run(next_element)
+  for _ in range(10):
+    cur_loss = sess.run(next_element)
 
   if  i % 100 == 0:
       # Initialize an iterator over the validation dataset.

@@ -37,22 +37,19 @@ class FeatureExtractor:
         data = np.append(data, zeros)
         start_idx = 0
 
-        spectrograms = np.zeros((num_segments, 21, self.fft_size // 2))
-        labels = np.zeros(num_segments)
         for i in range(0, num_segments):
             end_idx = start_idx + self.segment_len
             buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
             normalized_data = self.normalization(buffered_data_segment)
             spectrogram = self.calculate_spectrum(normalized_data)
-            spectrograms[i, :, :] = spectrogram
-            labels[i] = self.read_label(start_idx, end_idx, speech_time_stamps)
+            label = np.asarray(self.read_label(start_idx, end_idx, speech_time_stamps))
 
             start_idx = (i + 1)*self.segment_len
-
-        with h5py.File(h5_filename, "w") as h5file:
-            h5file.create_dataset(dataset_name, spectrograms.shape, spectrograms.dtype, spectrograms)
-            label_dataset_name = dataset_name + '_labels'
-            h5file.create_dataset(label_dataset_name, labels.shape, labels.dtype, labels)
+            filename = h5_filename + '_' + str(i) + '.hdf5'
+            with h5py.File(filename, "w") as h5file:
+                h5file.create_dataset(dataset_name, spectrogram.shape, spectrogram.dtype, spectrogram)
+                label_dataset_name = dataset_name + '_labels'
+                h5file.create_dataset(label_dataset_name, label.shape, label.dtype, label)
 
 
 
