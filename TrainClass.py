@@ -4,7 +4,7 @@ import os
 import h5py
 import tqdm
 
-from tensorflow.python import debug as tf_debug
+#from tensorflow.python import debug as tf_debug
 
 
 
@@ -19,19 +19,14 @@ class Train:
         self.path_to_validation_h5 = path_to_validation_h5
         self.train_files = self.collect_h5_files(path_to_train_h5)
         self.validation_files = self.collect_h5_files(path_to_validation_h5)
-
-
-        self.train_files_idx = range(0, len(self.train_files) - 1)
-        self.validation_files_idx = range(0, len(self.validation_files) - 1)
+        self.x = tf.placeholder(tf.float32, shape=(None, 21, 256), name='raw_input')
+        self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
 
         self.batch_size_const = batch_size
         self.num_epochs = num_epochs
         self.n_classes = num_classes
         self.learning_rate = learning_rate
 
-        self.input_file_idx = tf.placeholder(tf.int64, shape=[1, None], name='input_file_idx')
-        self.batch_size = tf.placeholder(tf.int64, name='batch_size')
-        self.dataset_switcher = 'train'
 
     @staticmethod
     def collect_h5_files(path):
@@ -51,23 +46,33 @@ class Train:
         return spectrogram, [label, np.float32(abs(label - 1))]
 
     def build_datasets(self):
-        dataset = tf.data.Dataset.from_tensor_slices(self.input_file_idx)
-        dataset = dataset.map(
+        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_files)
+        train_dataset = train_dataset.map(
             lambda file_idx: tuple(tf.py_func(
                 self._read_py_function, [file_idx], [tf.float32, tf.float32])))
-        #dataset = dataset.batch(self.batch_size)
-        dataset = dataset.repeat()
+        train_dataset = train_dataset.batch(self.batch_size_const)
+        train_dataset = train_dataset.repeat()
 
-        iter = dataset.make_initializable_iterator()
-        features_, labels_ = iter.get_next()
+        train_iter = train_dataset.make_one_shot_iterator()
 
-        return dataset, features_, labels_, iter
+
+        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_files)
+        validation_dataset = validation_dataset.map(
+            lambda file_idx: tuple(tf.py_func(
+                self._read_py_function, [file_idx], [tf.float32, tf.float32])))
+        validation_dataset = validation_dataset.batch(len(self.validation_files))
+        validation_dataset = validation_dataset.repeat()
+
+        validation_iter = validation_dataset.make_one_shot_iterator()
+
+
+        return train_dataset, train_iter, \
+               validation_dataset, validation_iter
 
     def build_classifier(self, input_size=[-1, 21, 256, 1]):
-        dataset, features_, labels_, iter = self.build_dataset()
 
         with tf.name_scope('inputs'):
-            x_reshaped = tf.reshape(features_, input_size, name='input_tensor')
+            x_reshaped = tf.reshape(self.x, input_size, name='input_tensor')
 
         # Convolution Layer with 50 filters and a kernel size of 5
         conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1')
@@ -96,11 +101,11 @@ class Train:
         # Define loss and optimizer
         with tf.name_scope('loss'):
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=out, labels=tf.cast(labels_, dtype=tf.int32)), name='loss')
+                logits=out, labels=tf.cast(self.y, dtype=tf.int32)), name='loss')
         loss_summary = tf.summary.scalar('loss', loss)
 
         with tf.name_scope('accuracy'):
-            correct_prediction = tf.equal(tf.argmax(out, 1), tf.argmax(labels_, 1), name='correct_prediction')
+            correct_prediction = tf.equal(tf.argmax(out, 1), tf.argmax(self.y, 1), name='correct_prediction')
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
         accuracy_summary = tf.summary.scalar('accuracy', accuracy)
 
@@ -117,11 +122,14 @@ class Train:
         writer = tf.summary.FileWriter('./events')
         writer.add_graph(tf.get_default_graph())
 
-        return n_batches, train_op, loss, accuracy, merged, writer, iter
+        return n_batches, train_op, loss, accuracy, merged, writer
 
     def run_training(self, input_size=[-1, 21, 256, 1]):
-        n_batches, train_op, loss, accuracy, merged, writer, iter = self.build_classifier(input_size)
+        n_batches, train_op, loss, accuracy, merged, writer = self.build_classifier(input_size)
+        _, train_iter, _, validation_iter = self.build_datasets()
 
+        print('Configuring session...\n')
+        #config = tf.ConfigProto(log_device_placement=True) # to use GPU + CPU
         with tf.Session() as sess:
 
             #uncomment to enable TensorFlow debugger
@@ -129,32 +137,34 @@ class Train:
 
             sess.run(tf.global_variables_initializer())
             # initialise iterator with train data
-            self.dataset_switcher = 'train'
-            sess.run(iter.initializer, feed_dict={self.input_file_idx: [self.train_files_idx], self.batch_size: self.batch_size_const})
             print('Training...')
             for i in range(self.num_epochs):
                 print("Epoch {}".format(i))
                 tot_loss = 0
+                train_features_, train_labels_ = sess.run(train_iter.get_next())
+                validation_features_, validation_labels_ = sess.run(validation_iter.get_next())
                 for j in tqdm.tqdm(range(n_batches)):
                     try:
-                        _, loss_value, summary = sess.run([train_op, loss, merged])
-                        writer.add_summary(summary, j)
-                        tot_loss += loss_value
+                        
+                        if j % 35 == 0:
+                            _, loss_value, summary = sess.run([train_op, loss, merged], feed_dict={self.x: train_features_, self.y: train_labels_})
+                            writer.add_summary(summary, j)
+                            tot_loss += loss_value
+                        else:
+                            _ = sess.run(train_op, feed_dict={self.x: train_features_,
+                                                                         self.y: train_labels_})
+
                     except tf.errors.OutOfRangeError:
                         break
 
-                    if j % 500 == 0:
-                        self.dataset_switcher = 'validation'
-                        sess.run(iter.initializer,
-                                 feed_dict={self.input_file_idx: [self.validation_files_idx], self.batch_size: len(self.validation_files)})
-                        print('Validation Loss: {:6e}'.format(sess.run(loss)))
-                        print(', Accuracy: {:3f}'.format(sess.run(accuracy)))
-                        self.dataset_switcher = 'train'
+                    if (j % 500 == 0) & (j > 1):
+                        
+                        loss_v, acc_v = sess.run([loss, accuracy], feed_dict={self.x: validation_features_, self.y: validation_labels_})
+                        print('Validation Loss: {:6e}'.format(loss_v))
+                        print(', Accuracy: {:3f}'.format(acc_v))
 
                 print("\nEpoch: {}, Loss: {:.6e}".format(i, tot_loss / n_batches))
 
             # initialise iterator with test data
-            self.dataset_switcher = 'validation'
-            sess.run(iter.initializer, feed_dict={self.input_file_idx: [self.validation_files_idx], self.batch_size: len(self.validation_files)})
-            print('\nValidation Loss: {:6e}'.format(sess.run(loss)))
-            self.dataset_switcher = 'train'
+            validation_features_, validation_labels_ = sess.run(validation_iter.get_next())
+            print('\nValidation Loss: {:6e}'.format(sess.run(loss, feed_dict={self.x: validation_features_, self.y: validation_labels_})))
