@@ -33,8 +33,10 @@ class FeatureExtractor:
         data = np.asarray(data)
 
         num_segments = data.shape[0] // self.segment_len
-        zeros = np.zeros(data.shape[0] % self.segment_len)
-        data = np.append(data, zeros)
+        #if data.shape[0] % self.segment_len != 0:
+        #    zeros = np.zeros(self.segment_len - (data.shape[0] % self.segment_len))
+        #    data = np.append(data, zeros)
+        #    num_segments += 1
         start_idx = 0
 
         for i in range(0, num_segments):
@@ -45,7 +47,7 @@ class FeatureExtractor:
             label = np.asarray(self.read_label(start_idx, end_idx, speech_time_stamps))
 
             start_idx = (i + 1)*self.segment_len
-            filename = h5_filename + '_' + str(i) + '.hdf5'
+            filename = h5_filename + '_' + str(i) + 'ex' + str(np.asscalar(label)) + '_' + '.hdf5'
             with h5py.File(filename, "w") as h5file:
                 h5file.create_dataset(dataset_name, spectrogram.shape, spectrogram.dtype, spectrogram)
                 label_dataset_name = dataset_name + '_labels'
@@ -64,9 +66,6 @@ class FeatureExtractor:
                 if cells[2] == 'speech\n':
                     speech_time_stamps += [(start_idx, end_idx)]
         return np.asarray(speech_time_stamps)
-
-
-
 
     def buffer_signal(self, sig):
         buffered_sig = []
@@ -125,10 +124,11 @@ class FeatureExtractor:
         plt.tight_layout()
         plt.show()
 
-    def read_label(self, start_idx, end_idx, speech_time_stamps):
+    @staticmethod
+    def read_label(start_idx, end_idx, speech_time_stamps):
         for i in range(0, speech_time_stamps.shape[0]):
-            if start_idx >= speech_time_stamps[i, 0] | start_idx <= speech_time_stamps[i, 1]:
+            if speech_time_stamps[i, 0] <= start_idx <= speech_time_stamps[i, 1]:
                 return 1
-            elif end_idx >= speech_time_stamps[i, 0] | end_idx <= speech_time_stamps[i, 1]:
+            elif speech_time_stamps[i, 0] <= end_idx <= speech_time_stamps[i, 1]:
                 return 1
         return 0
