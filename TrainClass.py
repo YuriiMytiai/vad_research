@@ -14,7 +14,8 @@ class Train:
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
                  checkpoint_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\checkpoints',
                  events_log_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\events',
-                 validation_cache_dir='D:\\h5dataset\\cache\\'):
+                 validation_cache_dir='D:\\h5dataset\\cache\\',
+                 train_valid_freq=50, valid_valid_freq=100):
         self.path_to_train_h5 = path_to_train_h5
         self.path_to_validation_h5 = path_to_validation_h5
         self.checkpoint_dir = checkpoint_dir
@@ -33,6 +34,8 @@ class Train:
         self.learning_rate = learning_rate
         self.regularization = regularization
 
+        self.train_valid_freq = train_valid_freq
+        self.valid_valid_freq = valid_valid_freq
         self.x = tf.placeholder(tf.float32, shape=(None, 21, 256), name='raw_input')
         self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
 
@@ -87,8 +90,6 @@ class Train:
                     except Exception as e:
                         print(e)
 
-
-
     @staticmethod
     def collect_h5_files(path):
         files_list = []
@@ -123,7 +124,6 @@ class Train:
             .batch(self.validation_batch_size)
         validation_iter = validation_dataset.make_one_shot_iterator()
 
-
         return train_dataset, train_iter, \
                validation_dataset, validation_iter
 
@@ -154,7 +154,7 @@ class Train:
         # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
 
         # Output layer, class prediction
-        #out = tf.layers.dense(fc1, self.n_classes, name='out')
+        # out = tf.layers.dense(fc1, self.n_classes, name='out')
         out = tf.contrib.layers.fully_connected(fc1, num_outputs=self.n_classes,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
                                                 weights_regularizer=regularizer,
@@ -200,7 +200,6 @@ class Train:
             merged, train_writer, validation_writer = self.build_classifier(input_size)
         _, train_iter, _, validation_iter = self.build_datasets()
 
-
         print('Configuring session...\n')
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
         with tf.Session(config=config) as sess:
@@ -222,7 +221,7 @@ class Train:
                 for j in tqdm.tqdm(range(num_train_batches)):
                     try:
                         
-                        if j % 35 == 0:
+                        if j % self.train_valid_freq == 0:
                             _, loss_value, summary = sess.run([train_op, loss, merged],
                                                               feed_dict={self.x: train_features_,
                                                                          self.y: train_labels_})
@@ -235,7 +234,7 @@ class Train:
                     except tf.errors.OutOfRangeError:
                         break
 
-                    if j % 100 == 0:
+                    if j % self.valid_valid_freq == 0:
                         num_correct = 0
                         sum_loss = 0
                         for _ in range(num_validation_batches):
