@@ -132,19 +132,23 @@ class Train:
         with tf.name_scope('inputs'):
             x_reshaped = tf.reshape(self.x, input_size, name='input_tensor')
 
+        regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
         # Convolution Layer with 50 filters and a kernel size of 5
-        conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1')
+        conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
+                                 kernel_initializer=tf.initializers.random_normal,
+                                 kernel_regularizer=regularizer)
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
         # Convolution Layer with 50 filters and a kernel size of 5
-        conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2')
+        conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
+                                 kernel_initializer=tf.initializers.random_normal,
+                                 kernel_regularizer=regularizer)
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
 
         # Flatten the data to a 1-D vector for the fully connected layer
         fc1 = tf.contrib.layers.flatten(conv2)
-        regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
         fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
                                                 weights_regularizer=regularizer,
@@ -213,19 +217,19 @@ class Train:
             saver = tf.train.Saver()
 
             print('Training...')
-            for i in range(self.num_epochs):
-                print("Epoch {}".format(i))
+            for epoch in range(self.num_epochs):
+                print("Epoch {}".format(epoch))
                 tot_loss = 0
                 train_features_, train_labels_ = sess.run(train_iter.get_next())
                 validation_features_, validation_labels_ = sess.run(validation_iter.get_next())
-                for j in tqdm.tqdm(range(num_train_batches)):
+                for batch in tqdm.tqdm(range(num_train_batches)):
                     try:
                         
-                        if j % self.train_valid_freq == 0:
+                        if batch % self.train_valid_freq == 0:
                             _, loss_value, summary = sess.run([train_op, loss, merged],
                                                               feed_dict={self.x: train_features_,
                                                                          self.y: train_labels_})
-                            train_writer.add_summary(summary, j)
+                            train_writer.add_summary(summary, batch)
                             tot_loss += loss_value
                         else:
                             _ = sess.run(train_op, feed_dict={self.x: train_features_,
@@ -234,7 +238,7 @@ class Train:
                     except tf.errors.OutOfRangeError:
                         break
 
-                    if j % self.valid_valid_freq == 0:
+                    if batch % self.valid_valid_freq == 0:
                         num_correct = 0
                         sum_loss = 0
                         for _ in range(num_validation_batches):
@@ -243,13 +247,13 @@ class Train:
                                                                          self.y: validation_labels_})
                             num_correct += acc_v * self.validation_batch_size
                             sum_loss += loss_v
-                        validation_writer.add_summary(summary, j)
+                        validation_writer.add_summary(summary, epoch * num_train_batches + batch)
                         validation_loss = sum_loss / num_validation_batches
                         validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
                         print('Validation Loss: {:6e}'.format(validation_loss))
                         print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
 
                 print("\nEpoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}"
-                      .format(i, tot_loss / num_train_batches, validation_loss))
+                      .format(epoch, tot_loss / num_train_batches, validation_loss))
                 checkpoint_path = os.path.join(self.checkpoint_dir, 'model.ckpt')
-                saver.save(sess, checkpoint_path, global_step=i)
+                saver.save(sess, checkpoint_path, global_step=epoch)
