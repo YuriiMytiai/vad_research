@@ -16,6 +16,7 @@ class Train:
                  events_log_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\events',
                  validation_cache_dir='D:\\h5dataset\\cache\\',
                  train_valid_freq=50, valid_valid_freq=100):
+
         self.path_to_train_h5 = path_to_train_h5
         self.path_to_validation_h5 = path_to_validation_h5
         self.checkpoint_dir = checkpoint_dir

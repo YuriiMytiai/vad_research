@@ -7,21 +7,24 @@ import h5py
 
 
 class FeatureExtractor:
-    fs = 16000
-    fft_size = 4096
-    fft_overlap = 1024
-    window = True
-    segment_len = fs * 0.5
+    def __init__(self, fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
+                 norm_target_rms=0.1):
 
-    def __init__(self, fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True):
         self.fs = fs
         self.fft_size = fft_size
         self.fft_overlap = fft_overlap
         self.window = window
         self.segment_len = segment_len
+        self.target_rms = norm_target_rms
 
+        self.num_speech_events = 0
+        self.num_nonspeech_events = 0
 
-    def extract_features_from_wav(self, wav_file, h5_filename, dataset_name):
+    def reset_events_counter(self):
+        self.num_speech_events = 0
+        self.num_nonspeech_events = 0
+
+    def extract_features_from_wav_to_h5(self, wav_file, h5_filename, dataset_name='data'):
         event_file = wav_file[:-3] + 'eventlab'
         speech_time_stamps = self.extract_labels_from_eventlab(event_file)
         file_fs, data = scipy.io.wavfile.read(wav_file)
@@ -32,28 +35,37 @@ class FeatureExtractor:
         data = data * k
         data = np.asarray(data)
 
-        num_segments = data.shape[0] // self.segment_len
-        #if data.shape[0] % self.segment_len != 0:
-        #    zeros = np.zeros(self.segment_len - (data.shape[0] % self.segment_len))
-        #    data = np.append(data, zeros)
-        #    num_segments += 1
-        start_idx = 0
+        num_different_events = speech_time_stamps.shape[0]
+        for event in range(num_different_events):
+            start_event_idx = speech_time_stamps[event, 0]
+            end_event_idx = speech_time_stamps[event, 1]
+            event_len = (end_event_idx - start_event_idx)
+            if event_len < self.segment_len:
+                continue
+            num_segments = event_len // self.segment_len
+            label = speech_time_stamps[event, 2]
 
-        for i in range(0, num_segments):
-            end_idx = start_idx + self.segment_len
-            buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
-            normalized_data = self.normalization(buffered_data_segment)
-            spectrogram = self.calculate_spectrum(normalized_data)
-            label = np.asarray(self.read_label(start_idx, end_idx, speech_time_stamps))
+            start_idx = start_event_idx
+            for segment in range(num_segments):
+                end_idx = start_idx + self.segment_len
 
-            start_idx = (i + 1)*self.segment_len
-            filename = h5_filename + '_' + str(i) + 'ex' + str(np.asscalar(label)) + '_' + '.hdf5'
-            with h5py.File(filename, "w") as h5file:
-                h5file.create_dataset(dataset_name, spectrogram.shape, spectrogram.dtype, spectrogram)
-                label_dataset_name = dataset_name + '_labels'
-                h5file.create_dataset(label_dataset_name, label.shape, label.dtype, label)
+                buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
+                normalized_data = self.normalization(buffered_data_segment)
+                spectrogram = self.calculate_spectrum(normalized_data)
 
+                filename = '{0}_ev_{1}_seg_{2}_lbl_{3}.hdf5'.format(h5_filename, str(event), str(segment),
+                                                                    str(np.asscalar(label)))
+                with h5py.File(filename, "w") as h5file:
+                    h5file.create_dataset(dataset_name, spectrogram.shape, spectrogram.dtype, spectrogram)
+                    label_dataset_name = dataset_name + '_labels'
+                    h5file.create_dataset(label_dataset_name, label.shape, label.dtype, label)
 
+                    if label == 1:
+                        self.num_speech_events += 1
+                    elif label == 0:
+                        self.num_nonspeech_events += 1
+
+                start_idx = (segment + 1) * self.segment_len
 
     def extract_labels_from_eventlab(self, event_file):
         speech_time_stamps = []
@@ -64,7 +76,9 @@ class FeatureExtractor:
                 end_idx = int(float(cells[1]) * self.fs)
 
                 if cells[2] == 'speech\n':
-                    speech_time_stamps += [(start_idx, end_idx)]
+                    speech_time_stamps += [(start_idx, end_idx, 1)]
+                elif cells[2] == 'nonspeech\n':
+                    speech_time_stamps += [(start_idx, end_idx, 0)]
         return np.asarray(speech_time_stamps)
 
     def buffer_signal(self, sig):
@@ -84,13 +98,12 @@ class FeatureExtractor:
         return np.asarray(buffered_sig)
 
     def normalization(self, sig):
-        target_rms = 0.01
         num_chunks = sig.shape[0]
         rms = []
         for i in range(0, num_chunks - 1):
             rms.append(self.calc_rms(sig[i]))
         max_rms = np.max(rms)
-        k_amp = target_rms / max_rms
+        k_amp = self.target_rms / max_rms
 
         sig *= k_amp
         return sig
@@ -123,12 +136,3 @@ class FeatureExtractor:
         plt.title('Mel spectrogram')
         plt.tight_layout()
         plt.show()
-
-    @staticmethod
-    def read_label(start_idx, end_idx, speech_time_stamps):
-        for i in range(0, speech_time_stamps.shape[0]):
-            if speech_time_stamps[i, 0] <= start_idx <= speech_time_stamps[i, 1]:
-                return 1
-            elif speech_time_stamps[i, 0] <= end_idx <= speech_time_stamps[i, 1]:
-                return 1
-        return 0
