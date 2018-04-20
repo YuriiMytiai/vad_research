@@ -24,8 +24,8 @@ class Train:
         self.validation_cache_dir = validation_cache_dir
         self.check_paths()
 
-        self.train_files = self.collect_h5_files(path_to_train_h5)
-        self.validation_files = self.collect_h5_files(path_to_validation_h5)
+        train_file = self.collect_h5_file(self.path_to_train_h5)
+        validation_file = self.collect_h5_file(self.path_to_validation_h5)
         self.enable_debug_mode = enable_debug_mode
 
         self.validation_batch_size = validation_batch_size
@@ -37,7 +37,15 @@ class Train:
 
         self.train_valid_freq = train_valid_freq
         self.valid_valid_freq = valid_valid_freq
-        self.x = tf.placeholder(tf.float32, shape=(None, 21, 256), name='raw_input')
+
+        self.train_file = h5py.File(train_file, 'r')
+        self.validation_file = h5py.File(validation_file, 'r')
+        self.train_idxs = list(range(0, self.train_file['data'].shape[0]))
+        self.validation_idxs = list(range(0, self.validation_file['data'].shape[0]))
+
+        self.x = tf.placeholder(tf.float32,
+                                shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]),
+                                name='raw_input')
         self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
 
     def check_paths(self):
@@ -92,35 +100,43 @@ class Train:
                         print(e)
 
     @staticmethod
-    def collect_h5_files(path):
-        files_list = []
+    def collect_h5_file(path):
         for root, dirs, files in os.walk(path):
             for file in files:
                 if file.endswith(".hdf5"):
-                    files_list.append(os.path.join(root, file))
-        return files_list
+                    return os.path.join(root, file)
 
-    def _read_py_function(self, file):
-        with h5py.File(file, 'r') as f:
-            spectrogram = f['data'].value
-            spectrogram = np.float32(spectrogram)
-            label = f['data_labels'].value
-            label = np.float32(label)
+    def close_files(self):
+        self.train_file.close()
+        self.validation_file.close()
+
+    def _read_py_function_train_(self, idx):
+        spectrogram = self.train_file['data'][idx, :]
+        label = self.train_file['data_labels'][idx, 0]
+        spectrogram = np.float32(spectrogram)
+        label = np.float32(label)
+        return spectrogram, [label, np.float32(abs(label - 1))]
+
+    def _read_py_function_valid_(self, idx):
+        spectrogram = self.validation_file['data'][idx, :]
+        label = self.validation_file['data_labels'][idx, 0]
+        spectrogram = np.float32(spectrogram)
+        label = np.float32(label)
         return spectrogram, [label, np.float32(abs(label - 1))]
 
     def build_datasets(self):
-        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_files)\
+        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs)\
             .map(lambda file_idx: tuple(tf.py_func(
-                self._read_py_function, [file_idx], [tf.float32, tf.float32])),
+                self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
                  num_parallel_calls=2)\
             .batch(self.batch_size_const)\
             .repeat()
         train_iter = train_dataset.make_one_shot_iterator()
 
-        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_files)\
+        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs)\
             .cache(filename=self.validation_cache_dir)\
             .map(lambda file_idx: tuple(tf.py_func(
-                self._read_py_function, [file_idx], [tf.float32, tf.float32])),
+                self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
                  num_parallel_calls=2)\
             .batch(self.validation_batch_size)
         validation_iter = validation_dataset.make_one_shot_iterator()
@@ -128,7 +144,7 @@ class Train:
         return train_dataset, train_iter, \
                validation_dataset, validation_iter
 
-    def build_classifier(self, input_size=[-1, 21, 256, 1]):
+    def build_classifier(self, input_size):
 
         with tf.name_scope('inputs'):
             x_reshaped = tf.reshape(self.x, input_size, name='input_tensor')
@@ -152,6 +168,7 @@ class Train:
         fc1 = tf.contrib.layers.flatten(conv2)
         fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                weights_initializer=tf.initializers.random_normal,
                                                 weights_regularizer=regularizer,
                                                 activation_fn=tf.nn.relu)
 
@@ -162,6 +179,7 @@ class Train:
         # out = tf.layers.dense(fc1, self.n_classes, name='out')
         out = tf.contrib.layers.fully_connected(fc1, num_outputs=self.n_classes,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                weights_initializer=tf.initializers.random_normal,
                                                 weights_regularizer=regularizer,
                                                 activation_fn=None)
 
@@ -191,8 +209,8 @@ class Train:
         writer.add_graph(tf.get_default_graph())
         merged = tf.summary.merge_all()  # merge accuracy & loss
 
-        num_train_batches = len(self.train_files) // self.batch_size_const
-        num_validation_batches = len(self.validation_files) // self.validation_batch_size
+        num_train_batches = self.train_file['data'].shape[0] // self.batch_size_const
+        num_validation_batches = self.validation_file['data'].shape[0] // self.validation_batch_size
 
         train_writer = tf.summary.FileWriter(self.events_log_dir + '\\train')
         validation_writer = tf.summary.FileWriter(self.events_log_dir + '\\validation')
@@ -200,7 +218,9 @@ class Train:
 
         return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
 
-    def run_training(self, input_size=[-1, 21, 256, 1]):
+    def run_training(self, **kwargs):
+        input_size = kwargs.get('input_size',
+                                [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1])
         num_train_batches, num_validation_batches, train_op, loss, accuracy,\
             merged, train_writer, validation_writer = self.build_classifier(input_size)
         _, train_iter, _, validation_iter = self.build_datasets()
@@ -258,3 +278,6 @@ class Train:
                       .format(epoch, tot_loss / num_train_batches, validation_loss))
                 checkpoint_path = os.path.join(self.checkpoint_dir, 'model.ckpt')
                 saver.save(sess, checkpoint_path, global_step=epoch)
+
+            self.close_files()
+            print('The end of training')

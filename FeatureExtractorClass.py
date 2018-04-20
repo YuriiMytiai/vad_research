@@ -4,27 +4,52 @@ import numpy as np
 import librosa
 import librosa.display
 import h5py
+import math
 
 
 class FeatureExtractor:
-    def __init__(self, fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
+    def __init__(self, h5_filename, dataset_name='data',
+                 fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
                  norm_target_rms=0.1):
 
+        self.h5_filename = h5_filename
+        self.dataset_name = dataset_name
+        self.label_dataset_name = self.dataset_name + '_labels'
         self.fs = fs
         self.fft_size = fft_size
         self.fft_overlap = fft_overlap
         self.window = window
         self.segment_len = segment_len
         self.target_rms = norm_target_rms
+        self.spectrogram_len = math.ceil(segment_len / (self.fft_size - self.fft_overlap))
+        self.spectrogram_high = math.ceil(fft_size / 2)
 
         self.num_speech_events = 0
         self.num_nonspeech_events = 0
 
-    def reset_events_counter(self):
-        self.num_speech_events = 0
-        self.num_nonspeech_events = 0
+        self.file = h5py.File(self.h5_filename)
+        self.labels_dataset = self.file.create_dataset(self.label_dataset_name,
+                                                       (1, 1),
+                                                       maxshape=(None, 1),
+                                                       chunks=(1, 1),
+                                                       compression="gzip")
+        self.features_dataset = self.file.create_dataset(self.dataset_name,
+                                                         (1, self.spectrogram_len, self.spectrogram_high),
+                                                         maxshape=(None, self.spectrogram_len, self.spectrogram_high),
+                                                         chunks=(1, self.spectrogram_len, self.spectrogram_high),
+                                                         compression="gzip")
 
-    def extract_features_from_wav_to_h5(self, wav_file, h5_filename, dataset_name='data'):
+    def add_example_to_h5(self, example, label):
+        self.features_dataset.resize((self.features_dataset.shape[0] + 1, self.spectrogram_len,
+                                      self.spectrogram_high))
+        self.features_dataset[-1, :] = example
+        self.labels_dataset.resize((self.labels_dataset.shape[0] + 1, 1))
+        self.labels_dataset[-1, :] = label
+
+    def close_files(self):
+        self.file.close()
+
+    def extract_features_from_wav_to_h5(self, wav_file):
         event_file = wav_file[:-3] + 'eventlab'
         speech_time_stamps = self.extract_labels_from_eventlab(event_file)
         file_fs, data = scipy.io.wavfile.read(wav_file)
@@ -53,17 +78,11 @@ class FeatureExtractor:
                 normalized_data = self.normalization(buffered_data_segment)
                 spectrogram = self.calculate_spectrum(normalized_data)
 
-                filename = '{0}_ev_{1}_seg_{2}_lbl_{3}.hdf5'.format(h5_filename, str(event), str(segment),
-                                                                    str(np.asscalar(label)))
-                with h5py.File(filename, "w") as h5file:
-                    h5file.create_dataset(dataset_name, spectrogram.shape, spectrogram.dtype, spectrogram)
-                    label_dataset_name = dataset_name + '_labels'
-                    h5file.create_dataset(label_dataset_name, label.shape, label.dtype, label)
-
-                    if label == 1:
-                        self.num_speech_events += 1
-                    elif label == 0:
-                        self.num_nonspeech_events += 1
+                self.add_example_to_h5(spectrogram, label)
+                if label == 1:
+                    self.num_speech_events += 1
+                elif label == 0:
+                    self.num_nonspeech_events += 1
 
                 start_idx = (segment + 1) * self.segment_len
 
