@@ -2,7 +2,7 @@ import scipy.io.wavfile
 import scipy.signal
 import numpy as np
 import librosa
-import librosa.display
+#import librosa.display
 import h5py
 import math
 
@@ -144,14 +144,14 @@ class FeatureExtractor:
             spec.append(np.abs(amp_spec) ** 2)
         return np.asarray(spec)
 
-    @staticmethod
-    def plot_spectrogram(spectrogram):
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(10, 4))
-        spectrogram = np.transpose(spectrogram)
-        librosa.display.specshow(librosa.power_to_db(spectrogram, ref=np.max),
-                                 y_axis='mel', fmax=8000, x_axis='time')
-        plt.colorbar(format='%+2.0f dB')
-        plt.title('Mel spectrogram')
-        plt.tight_layout()
-        plt.show()
+    #@staticmethod
+    #def plot_spectrogram(spectrogram):
+    #    import matplotlib.pyplot as plt
+    #    plt.figure(figsize=(10, 4))
+    #    spectrogram = np.transpose(spectrogram)
+    #    librosa.display.specshow(librosa.power_to_db(spectrogram, ref=np.max),
+    #                             y_axis='mel', fmax=8000, x_axis='time')
+    #    plt.colorbar(format='%+2.0f dB')
+    #    plt.title('Mel spectrogram')
+    #    plt.tight_layout()
+    #    plt.show()

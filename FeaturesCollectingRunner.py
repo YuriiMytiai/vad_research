@@ -10,22 +10,22 @@ def print_dataset_info(num_speech_events, num_nonspeech_events):
     print('Nonspeech events: {} examples, {:.2f}%'.format(num_nonspeech_events, num_nonspeech_events / num_events))
 
 
-path_to_wavs = "C:\\Users\\User\\Desktop\\vad_research\\datasets\\qut-noise-timit\\qutnoise\\QUT-NOISE\\QUT-NOISE-TIMIT"
-path_to_h5 = "D:\\h5dataset"
+path_to_wavs = "/media/yuriy/Data/VAD_research/QUT-NOISE/QUT-NOISE-TIMIT"
+path_to_h5 = "/media/yuriy/Data/VAD_research/qut-noise-timit-features"
 
 data = DataCollector(path_to_wavs)
 data.load_data()
 data.preprocess_files()
 
 train_dataset_size = len(data.data_set_files_list["train_wavs"])
-train_dataset_size = 100
 validation_dataset_size = len(data.data_set_files_list["validation_wavs"])
-validation_dataset_size = 10
+test_dataset_size = len(data.data_set_files_list["test_wavs"])
 
-h5filename_train = path_to_h5 + '\\train\\' + 'dataset.hdf5'
-h5filename_validation = path_to_h5 + '\\validation\\' + 'dataset.hdf5'
+h5filename_train = path_to_h5 + '/train/' + 'dataset.hdf5'
+h5filename_validation = path_to_h5 + '/validation/' + 'dataset.hdf5'
+h5filename_test = path_to_h5 + '/test/' + 'dataset.hdf5'
+
 feature_extractor = FeatureExtractor(h5filename_train)
-
 for i in tqdm.tqdm(range(train_dataset_size)):
     feature_extractor.extract_features_from_wav_to_h5(data.data_set_files_list["train_wavs"][i])
 feature_extractor.close_files()
@@ -40,6 +40,13 @@ feature_extractor.close_files()
 print('Validation dataset:')
 print_dataset_info(feature_extractor.num_speech_events, feature_extractor.num_nonspeech_events)
 
+
+feature_extractor = FeatureExtractor(h5filename_test)
+for i in tqdm.tqdm(range(test_dataset_size)):
+    feature_extractor.extract_features_from_wav_to_h5(data.data_set_files_list["test_wavs"][i])
+feature_extractor.close_files()
+print('Test dataset:')
+print_dataset_info(feature_extractor.num_speech_events, feature_extractor.num_nonspeech_events)
 
 
 

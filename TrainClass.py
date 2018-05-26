@@ -61,24 +61,24 @@ class Train:
             print('Directory for checkpoints was made: {}'.format(self.checkpoint_dir))
         if not os.path.isdir(self.events_log_dir):
             try:
-                os.makedirs(self.events_log_dir + '\\train')
+                os.makedirs(self.events_log_dir + '/train')
             except Exception as e:
                     print(e)
             print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '\\train'))
             try:
-                os.makedirs(self.events_log_dir + '\\validation')
+                os.makedirs(self.events_log_dir + '/validation')
             except Exception as e:
                     print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '\\validation'))
-        if not os.path.isdir(self.events_log_dir + '\\train'):
+        if not os.path.isdir(self.events_log_dir + '/train'):
             try:
-                os.makedirs(self.events_log_dir + '\\train')
+                os.makedirs(self.events_log_dir + '/train')
             except Exception as e:
                     print(e)
             print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '\\train'))
-        if not os.path.isdir(self.events_log_dir + '\\validation'):
+        if not os.path.isdir(self.events_log_dir + '/validation'):
             try:
-                os.makedirs(self.events_log_dir + '\\validation')
+                os.makedirs(self.events_log_dir + '/validation')
             except Exception as e:
                     print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '\\validation'))
@@ -151,26 +151,27 @@ class Train:
 
         regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
         # Convolution Layer with 50 filters and a kernel size of 5
-        conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
-                                 kernel_initializer=tf.initializers.random_normal,
-                                 kernel_regularizer=regularizer)
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
+        with tf.device('/device:GPU:0'):
+            conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
+                                     kernel_initializer=tf.initializers.random_normal,
+                                     kernel_regularizer=regularizer)
+            # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+            conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
-        # Convolution Layer with 50 filters and a kernel size of 5
-        conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
-                                 kernel_initializer=tf.initializers.random_normal,
-                                 kernel_regularizer=regularizer)
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
+            # Convolution Layer with 50 filters and a kernel size of 5
+            conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
+                                     kernel_initializer=tf.initializers.random_normal,
+                                     kernel_regularizer=regularizer)
+            # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+            conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
 
-        # Flatten the data to a 1-D vector for the fully connected layer
-        fc1 = tf.contrib.layers.flatten(conv2)
-        fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
-                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
-                                                weights_initializer=tf.initializers.random_normal,
-                                                weights_regularizer=regularizer,
-                                                activation_fn=tf.nn.relu)
+            # Flatten the data to a 1-D vector for the fully connected layer
+            fc1 = tf.contrib.layers.flatten(conv2)
+            fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
+                                                    biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                    weights_initializer=tf.initializers.random_normal,
+                                                    weights_regularizer=regularizer,
+                                                    activation_fn=tf.nn.relu)
 
         # Fully connected layer (in tf contrib folder for now)
         # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
