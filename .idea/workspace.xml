@@ -22,6 +22,7 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       <file leaf-file-name="FeaturesCollectingRunner.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
           <provider selected="true" editor-type-id="text-editor">
@@ -39,6 +40,13 @@
               <caret line="25" column="51" selection-start-line="25" selection-start-column="51" selection-end-line="25" selection-end-column="51" />
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
+=======
+      <file leaf-file-name="FeaturesCollectingRunner.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="135">
+              <caret line="9" column="47" selection-start-line="9" selection-start-column="47" selection-end-line="9" selection-end-column="47" />
+>>>>>>> Stashed changes
               <folding>
                 <element signature="e#0#44#0" expanded="true" />
               </folding>
@@ -46,6 +54,7 @@
           </provider>
         </entry>
       </file>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
       <file leaf-file-name="svd.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/svd.py">
@@ -79,6 +88,13 @@
               <caret line="46" selection-start-line="46" selection-end-line="46" />
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
+=======
+      <file leaf-file-name="FeatureExtractorClass.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/FeatureExtractorClass.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="225">
+              <caret line="15" column="40" selection-start-line="15" selection-start-column="40" selection-end-line="15" selection-end-column="40" />
+>>>>>>> Stashed changes
               <folding>
                 <element signature="e#0#23#0" expanded="true" />
               </folding>
@@ -90,6 +106,7 @@
       <file leaf-file-name="DataCollectorClass.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DataCollectorClass.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
             <state relative-caret-position="-114">
               <caret line="17" column="30" lean-forward="false" selection-start-line="17" selection-start-column="30" selection-end-line="17" selection-end-column="30" />
               <folding />
@@ -159,6 +176,10 @@
             <state relative-caret-position="45">
               <caret line="3" column="32" selection-start-line="3" selection-start-column="32" selection-end-line="3" selection-end-column="32" />
 >>>>>>> Stashed changes
+=======
+            <state relative-caret-position="240">
+              <caret line="17" column="30" selection-start-line="17" selection-start-column="30" selection-end-line="17" selection-end-column="30" />
+>>>>>>> Stashed changes
             </state>
           </provider>
         </entry>
@@ -203,6 +224,7 @@
     </option>
   </component>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
   <component name="ProjectFrameBounds" extendedState="6">
     <option name="y" value="17" />
 =======
@@ -212,18 +234,27 @@
 >>>>>>> Stashed changes
     <option name="width" value="1214" />
     <option name="height" value="717" />
+=======
+  <component name="ProjectFrameBounds">
+    <option name="x" value="-1" />
+    <option name="y" value="25" />
+    <option name="width" value="1206" />
+    <option name="height" value="937" />
+>>>>>>> Stashed changes
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
               <item name="vad_research" type="b2602c69:ProjectViewProjectNode" />
               <item name="vad_research" type="462c0819:PsiDirectoryNode" />
+<<<<<<< Updated upstream
             </path>
             <path>
               <item name="vad_research" type="b2602c69:ProjectViewProjectNode" />
@@ -234,11 +265,14 @@
               <item name="src" type="b2602c69:ProjectViewProjectNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
               <item name="events" type="462c0819:PsiDirectoryNode" />
+=======
+>>>>>>> Stashed changes
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
       <pane id="Scope" />
       <pane id="Scratches" />
@@ -254,6 +288,14 @@
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
+=======
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+>>>>>>> Stashed changes
   <component name="RunDashboard">
     <option name="ruleStates">
       <list>
@@ -269,9 +311,13 @@
 <<<<<<< Updated upstream
   <component name="RunManager" selected="Python.TrainRunner">
     <configuration name="FeaturesCollectingRunner" type="PythonConfigurationType" factoryName="Python" temporary="true">
+<<<<<<< Updated upstream
 =======
   <component name="RunManager" selected="Python.Runner">
     <configuration name="Runner" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="src" />
+>>>>>>> Stashed changes
+=======
       <module name="src" />
 >>>>>>> Stashed changes
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -285,8 +331,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       <module name="src" />
 <<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/FeaturesCollectingRunner.py" />
 =======
       <option name="SCRIPT_NAME" value="C:\Users\User\Desktop\vad_research\src\FeaturesCollectingRunner.py" />
@@ -301,8 +350,12 @@
     </configuration>
 <<<<<<< Updated upstream
     <configuration name="Runner" type="PythonConfigurationType" factoryName="Python" temporary="true">
+<<<<<<< Updated upstream
 =======
     <configuration name="Train3" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="src" />
+>>>>>>> Stashed changes
+=======
       <module name="src" />
 >>>>>>> Stashed changes
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -316,7 +369,10 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       <module name="src" />
+=======
+>>>>>>> Stashed changes
       <option name="SCRIPT_NAME" value="C:\Users\User\Desktop\vad_research\src\FeaturesCollectingRunner.py" />
 =======
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Train3.py" />
@@ -381,6 +437,7 @@
       <option name="MODULE_MODE" value="false" />
     </configuration>
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     <list size="5">
       <item index="0" class="java.lang.String" itemvalue="Python.Runner" />
       <item index="1" class="java.lang.String" itemvalue="Python.TrainRunner" />
@@ -420,6 +477,22 @@
         <item itemvalue="Python.Runner" />
 >>>>>>> Stashed changes
 >>>>>>> Stashed changes
+=======
+    <list>
+      <item itemvalue="Python.Runner" />
+      <item itemvalue="Python.TrainRunner" />
+      <item itemvalue="Python.svd" />
+      <item itemvalue="Python.FeaturesCollectingRunner" />
+      <item itemvalue="Python.TrainClass" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.TrainRunner" />
+        <item itemvalue="Python.svd" />
+        <item itemvalue="Python.TrainClass" />
+        <item itemvalue="Python.FeaturesCollectingRunner" />
+        <item itemvalue="Python.Runner" />
+>>>>>>> Stashed changes
       </list>
     </recent_temporary>
   </component>
@@ -437,6 +510,7 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
     <layout>
@@ -475,10 +549,30 @@
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+=======
+    <frame x="-1" y="25" width="1206" height="937" extended-state="1" />
+    <editor active="true" />
+    <layout>
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.31312293" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="bottom" id="Version Control" order="10" />
+      <window_info anchor="bottom" id="Python Console" order="8" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.68037975" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Terminal" order="9" />
+      <window_info id="Favorites" order="2" side_tool="true" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.42246836" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+>>>>>>> Stashed changes
       <window_info anchor="right" id="Data View" order="3" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32911393" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Message" order="0" />
+<<<<<<< Updated upstream
 >>>>>>> Stashed changes
     </layout>
     <layout-to-restore>
@@ -520,6 +614,28 @@
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Python Console" order="9" />
+>>>>>>> Stashed changes
+=======
+    </layout>
+    <layout-to-restore>
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.22474378" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.30537975" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="right" id="Data View" order="3" />
+      <window_info id="Structure" order="1" weight="0.25" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Python Console" order="8" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32911393" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.42246836" />
+      <window_info anchor="bottom" id="Terminal" order="9" />
+      <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Version Control" order="10" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info id="Favorites" order="2" side_tool="true" />
 >>>>>>> Stashed changes
     </layout-to-restore>
   </component>
@@ -604,6 +720,7 @@
 =======
     <entry file="file://$PROJECT_DIR$/src/TrainClass.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="2125">
 <<<<<<< Updated upstream
           <caret line="131" column="78" lean-forward="false" selection-start-line="131" selection-start-column="78" selection-end-line="131" selection-end-column="78" />
@@ -613,13 +730,25 @@
 =======
           <caret line="131" column="78" selection-start-line="131" selection-start-column="78" selection-end-line="131" selection-end-column="78" />
 >>>>>>> Stashed changes
+=======
+        <state relative-caret-position="493">
+          <caret line="30" column="52" selection-start-line="30" selection-start-column="52" selection-end-line="30" selection-end-column="52" />
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/DataCollectorClass.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="493">
           <caret line="30" column="52" selection-start-line="30" selection-start-column="52" selection-end-line="30" selection-end-column="52" />
+=======
+        <state relative-caret-position="306">
+          <caret line="18" column="104" selection-start-line="18" selection-start-column="104" selection-end-line="18" selection-end-column="104" />
+          <folding>
+            <element signature="e#0#44#0" expanded="true" />
+          </folding>
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>
@@ -633,6 +762,7 @@
         </state>
       </provider>
     </entry>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
     <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
 =======
@@ -680,6 +810,8 @@
         </state>
       </provider>
     </entry>
+=======
+>>>>>>> Stashed changes
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/librosa/core/spectrum.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/librosa/util/utils.py" />
     <entry file="file://$USER_HOME$/.PyCharmCE2017.2/system/python_stubs/1194569904/numpy/core/umath.py" />
@@ -702,6 +834,7 @@
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/numpy/core/fromnumeric.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/framework/ops.py" />
     <entry file="file://$PROJECT_DIR$/Train2.py" />
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 =======
     <entry file="file://$PROJECT_DIR$/src/DataCollectorClass.py">
@@ -745,15 +878,23 @@
     </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/contrib/tensor_forest/hybrid/python/layers/fully_connected.py">
 =======
+=======
+    <entry file="file://$PROJECT_DIR$/Train.py" />
+    <entry file="file://$PROJECT_DIR$/esd.py" />
+>>>>>>> Stashed changes
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/ops/losses/losses_impl.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/layers/core.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/numba/hsa/hsadrv/driver.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/ops/gen_dataset_ops.py" />
+<<<<<<< Updated upstream
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/data/ops/dataset_ops.py" />
+=======
+>>>>>>> Stashed changes
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/contrib/tensor_forest/hybrid/python/layers/fully_connected.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/contrib/tensor_forest/hybrid/python/models/nn.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/__init__.py" />
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/layers/pooling.py" />
+<<<<<<< Updated upstream
     <entry file="file://$PROJECT_DIR$/src/svd.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="360">
@@ -852,66 +993,41 @@
     </entry>
 <<<<<<< Updated upstream
 >>>>>>> Stashed changes
+=======
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/core/protobuf/config_pb2.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/client/session.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/layers/convolutional.py" />
+>>>>>>> Stashed changes
     <entry file="file://$PROJECT_DIR$/Train3.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2312">
-          <caret line="136" column="89" lean-forward="false" selection-start-line="136" selection-start-column="89" selection-end-line="136" selection-end-column="110" />
+          <caret line="136" column="89" selection-start-line="136" selection-start-column="89" selection-end-line="136" selection-end-column="110" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/h5py/_hl/group.py">
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/h5py/_hl/group.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/h5py/_hl/files.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/abc.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/data/util/nest.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/data/ops/dataset_ops.py" />
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/framework/tensor_shape.py" />
+    <entry file="file://$PROJECT_DIR$/TrainClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1173">
-          <caret line="108" column="24" lean-forward="false" selection-start-line="108" selection-start-column="24" selection-end-line="108" selection-end-column="24" />
-          <folding />
+        <state relative-caret-position="1980">
+          <caret line="181" column="98" selection-start-line="181" selection-start-column="98" selection-end-line="181" selection-end-column="98" />
+          <folding>
+            <element signature="e#0#23#0" expanded="true" />
+            <element signature="e#2190#4762#0" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/h5py/_hl/files.py">
+    <entry file="file://$PROJECT_DIR$/TrainRunner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-539">
-          <caret line="229" column="8" lean-forward="false" selection-start-line="229" selection-start-column="8" selection-end-line="229" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/abc.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="128">
-          <caret line="180" column="0" lean-forward="false" selection-start-line="180" selection-start-column="0" selection-end-line="180" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/data/util/nest.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="66">
-          <caret line="83" column="0" lean-forward="false" selection-start-line="83" selection-start-column="0" selection-end-line="83" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/data/ops/dataset_ops.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="89">
-          <caret line="963" column="30" lean-forward="false" selection-start-line="963" selection-start-column="30" selection-end-line="963" selection-end-column="30" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/tensorflow/python/framework/tensor_shape.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-64">
-          <caret line="98" column="6" lean-forward="false" selection-start-line="98" selection-start-column="6" selection-end-line="98" selection-end-column="6" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/DataCollectorClass.py">
-      <provider selected="true" editor-type-id="text-editor">
+<<<<<<< Updated upstream
         <state relative-caret-position="-114">
           <caret line="17" column="30" lean-forward="false" selection-start-line="17" selection-start-column="30" selection-end-line="17" selection-end-column="30" />
           <folding />
@@ -921,13 +1037,17 @@
         <state relative-caret-position="49">
           <caret line="231" column="67" selection-start-line="231" selection-start-column="67" selection-end-line="231" selection-end-column="67" />
 >>>>>>> Stashed changes
+=======
+        <state relative-caret-position="105">
+          <caret line="7" selection-start-line="7" selection-end-line="7" />
+>>>>>>> Stashed changes
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/svd.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="187">
-          <caret line="11" column="19" lean-forward="true" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
+        <state relative-caret-position="165">
+          <caret line="11" column="19" selection-start-line="11" selection-start-column="19" selection-end-line="11" selection-end-column="19" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
@@ -936,40 +1056,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FeatureExtractorClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="833">
-          <caret line="49" column="25" lean-forward="false" selection-start-line="49" selection-start-column="25" selection-end-line="49" selection-end-column="25" />
+        <state relative-caret-position="225">
+          <caret line="15" column="40" selection-start-line="15" selection-start-column="40" selection-end-line="15" selection-end-column="40" />
           <folding>
             <element signature="e#0#23#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DataCollectorClass.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="17" column="30" selection-start-line="17" selection-start-column="30" selection-end-line="17" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" column="47" lean-forward="false" selection-start-line="9" selection-start-column="47" selection-end-line="9" selection-end-column="47" />
+        <state relative-caret-position="135">
+          <caret line="9" column="47" selection-start-line="9" selection-start-column="47" selection-end-line="9" selection-end-column="47" />
           <folding>
             <element signature="e#0#44#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TrainClass.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2244">
-          <caret line="181" column="98" lean-forward="false" selection-start-line="181" selection-start-column="98" selection-end-line="181" selection-end-column="98" />
-          <folding>
-            <element signature="e#0#23#0" expanded="true" />
-            <element signature="e#2190#4762#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/TrainRunner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="34">
-          <caret line="2" column="66" lean-forward="true" selection-start-line="2" selection-start-column="66" selection-end-line="2" selection-end-column="66" />
-          <folding />
         </state>
       </provider>
     </entry>
