@@ -6,12 +6,12 @@ import tqdm
 def print_dataset_info(num_speech_events, num_nonspeech_events):
     num_events = num_speech_events + num_nonspeech_events
     print('Dataset size: {}'.format(num_events))
-    print('Speech events: {} examples, {:.2f}%'.format(num_speech_events, num_speech_events / num_events))
-    print('Nonspeech events: {} examples, {:.2f}%'.format(num_nonspeech_events, num_nonspeech_events / num_events))
+    print('Speech events: {} examples, {:.2f}%'.format(num_speech_events, num_speech_events / num_events * 100))
+    print('Nonspeech events: {} examples, {:.2f}%'.format(num_nonspeech_events, num_nonspeech_events / num_events * 100))
 
 
-path_to_wavs = "/media/yuriy/Data/VAD_research/QUT-NOISE/QUT-NOISE-TIMIT"
-path_to_h5 = "/media/yuriy/Data/VAD_research/qut-noise-timit-features"
+path_to_wavs = "/home/nv1050ti/datasets/qut-noise/QUT-NOISE/QUT-NOISE-TIMIT"
+path_to_h5 = "/media/hdd/datasets/qut-noise-timit-specgrams-high_snr/"
 
 data = DataCollector(path_to_wavs)
 data.load_data()

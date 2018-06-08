@@ -12,6 +12,7 @@ class Train:
                  path_to_validation_h5="D:\\h5dataset\\validation",
                  batch_size=10, validation_batch_size=500, num_epochs=10, num_classes=2,
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
+                 enable_regularization=False, weights_init=tf.initializers.random_normal,
                  checkpoint_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\checkpoints',
                  events_log_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\events',
                  validation_cache_dir='D:\\h5dataset\\cache\\',
@@ -33,7 +34,9 @@ class Train:
         self.num_epochs = num_epochs
         self.n_classes = num_classes
         self.learning_rate = learning_rate
+        self.enable_regularization = enable_regularization
         self.regularization = regularization
+        self.weights_initializer = weights_init
 
         self.train_valid_freq = train_valid_freq
         self.valid_valid_freq = valid_valid_freq
@@ -64,24 +67,24 @@ class Train:
                 os.makedirs(self.events_log_dir + '/train')
             except Exception as e:
                     print(e)
-            print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '\\train'))
+            print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '/train'))
             try:
                 os.makedirs(self.events_log_dir + '/validation')
             except Exception as e:
                     print(e)
-            print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '\\validation'))
+            print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
         if not os.path.isdir(self.events_log_dir + '/train'):
             try:
                 os.makedirs(self.events_log_dir + '/train')
             except Exception as e:
                     print(e)
-            print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '\\train'))
+            print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '/train'))
         if not os.path.isdir(self.events_log_dir + '/validation'):
             try:
                 os.makedirs(self.events_log_dir + '/validation')
             except Exception as e:
                     print(e)
-            print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '\\validation'))
+            print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
         if not os.path.isdir(self.validation_cache_dir):
             try:
                 os.makedirs(self.validation_cache_dir)
@@ -128,7 +131,7 @@ class Train:
         train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs)\
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=2)\
+                 num_parallel_calls=4)\
             .batch(self.batch_size_const)\
             .repeat()
         train_iter = train_dataset.make_one_shot_iterator()
@@ -137,7 +140,7 @@ class Train:
             .cache(filename=self.validation_cache_dir)\
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=2)\
+                 num_parallel_calls=4)\
             .batch(self.validation_batch_size)
         validation_iter = validation_dataset.make_one_shot_iterator()
 
@@ -149,29 +152,32 @@ class Train:
         with tf.name_scope('inputs'):
             x_reshaped = tf.reshape(self.x, input_size, name='input_tensor')
 
-        regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
+        # Regularization:
+        if self.enable_regularization:
+            regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
+        else:
+            regularizer = None
         # Convolution Layer with 50 filters and a kernel size of 5
-        with tf.device('/device:GPU:0'):
-            conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
-                                     kernel_initializer=tf.initializers.random_normal,
-                                     kernel_regularizer=regularizer)
-            # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-            conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
+        conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
+                                 kernel_initializer=self.weights_initializer,
+                                 kernel_regularizer=regularizer)
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
-            # Convolution Layer with 50 filters and a kernel size of 5
-            conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
-                                     kernel_initializer=tf.initializers.random_normal,
-                                     kernel_regularizer=regularizer)
-            # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-            conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
+        # Convolution Layer with 50 filters and a kernel size of 5
+        conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
+                                 kernel_initializer=self.weights_initializer,
+                                 kernel_regularizer=regularizer)
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
 
-            # Flatten the data to a 1-D vector for the fully connected layer
-            fc1 = tf.contrib.layers.flatten(conv2)
-            fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
-                                                    biases_initializer=tf.contrib.layers.xavier_initializer(),
-                                                    weights_initializer=tf.initializers.random_normal,
-                                                    weights_regularizer=regularizer,
-                                                    activation_fn=tf.nn.relu)
+        # Flatten the data to a 1-D vector for the fully connected layer
+        fc1 = tf.contrib.layers.flatten(conv2)
+        fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
+                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                weights_initializer=self.weights_initializer,
+                                                weights_regularizer=regularizer,
+                                                activation_fn=tf.nn.relu)
 
         # Fully connected layer (in tf contrib folder for now)
         # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
@@ -180,22 +186,26 @@ class Train:
         # out = tf.layers.dense(fc1, self.n_classes, name='out')
         out = tf.contrib.layers.fully_connected(fc1, num_outputs=self.n_classes,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
-                                                weights_initializer=tf.initializers.random_normal,
+                                                weights_initializer=self.weights_initializer,
                                                 weights_regularizer=regularizer,
                                                 activation_fn=None)
 
         # Predictions
-        y_pred = tf.argmax(out, axis=1)
+        # y_pred = tf.argmax(out, axis=1)
         # y_pred = tf.expand_dims(y_pred, 0)
-        pred_probas = tf.nn.softmax(out)
+        # pred_probas = tf.nn.softmax(out)
+        logits_out_layer = tf.layers.dense(inputs=out, units=self.n_classes)
 
         # Define loss and optimizer
         with tf.name_scope('loss'):
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=out, labels=tf.cast(self.y, dtype=tf.int32)), name='loss')
-            reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-            reg_term = tf.contrib.layers.apply_regularization(regularizer, reg_variables)
-            loss += reg_term
+                logits=logits_out_layer, labels=tf.cast(self.y, dtype=tf.int32)), name='loss')
+
+            # loss = tf.reduce_mean(tf.losses.huber_loss(tf.cast(self.y, dtype=tf.int32), pred_probas), name='loss')
+            if self.enable_regularization:
+                reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+                reg_term = tf.contrib.layers.apply_regularization(regularizer, reg_variables)
+                loss += reg_term
         tf.summary.scalar('loss', loss)
 
         with tf.name_scope('accuracy'):
@@ -204,7 +214,8 @@ class Train:
         tf.summary.scalar('accuracy', accuracy)
 
         optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, name='adam_opt')
-        train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step(), name='opt_min')
+        # train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step(), name='opt_min')
+        train_op = optimizer.minimize(loss, name='opt_min')
 
         writer = tf.summary.FileWriter('./events')
         writer.add_graph(tf.get_default_graph())
@@ -213,8 +224,8 @@ class Train:
         num_train_batches = self.train_file['data'].shape[0] // self.batch_size_const
         num_validation_batches = self.validation_file['data'].shape[0] // self.validation_batch_size
 
-        train_writer = tf.summary.FileWriter(self.events_log_dir + '\\train')
-        validation_writer = tf.summary.FileWriter(self.events_log_dir + '\\validation')
+        train_writer = tf.summary.FileWriter(self.events_log_dir + '/train')
+        validation_writer = tf.summary.FileWriter(self.events_log_dir + '/validation')
         train_writer.add_graph(tf.get_default_graph())
 
         return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
@@ -251,7 +262,7 @@ class Train:
                             _, loss_value, summary = sess.run([train_op, loss, merged],
                                                               feed_dict={self.x: train_features_,
                                                                          self.y: train_labels_})
-                            train_writer.add_summary(summary, batch)
+                            train_writer.add_summary(summary, epoch * num_train_batches + batch)
                             tot_loss += loss_value
                         else:
                             _ = sess.run(train_op, feed_dict={self.x: train_features_,
@@ -277,8 +288,8 @@ class Train:
 
                 print("\nEpoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}"
                       .format(epoch, tot_loss / num_train_batches, validation_loss))
-                checkpoint_path = os.path.join(self.checkpoint_dir, 'model.ckpt')
+                checkpoint_path = os.path.join(self.checkpoint_dir, 'ckpt_epoch' + str(epoch))
                 saver.save(sess, checkpoint_path, global_step=epoch)
 
             self.close_files()
-            print('The end of training')
+            print('The end of the training')

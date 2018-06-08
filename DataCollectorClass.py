@@ -17,7 +17,14 @@ class DataCollector:
         for root, dirs, files in os.walk(self.path_to_data):
             for file in files:
                 if file.endswith(".wav"):
-                    self.wavs_list.append(os.path.join(root, file))
+
+                    # here we want to filter wavs with SNT lower than 0:
+                    if "_n-05_" in file:
+                        continue
+                    elif "_n-10_" in file:
+                        continue
+                    else:
+                        self.wavs_list.append(os.path.join(root, file))
 
     def preprocess_files(self, part_of_train_data=0.8):
         random.shuffle(self.wavs_list)

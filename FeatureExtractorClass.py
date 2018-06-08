@@ -5,6 +5,7 @@ import librosa
 #import librosa.display
 import h5py
 import math
+import soundfile as sf
 
 
 class FeatureExtractor:
@@ -52,7 +53,22 @@ class FeatureExtractor:
     def extract_features_from_wav_to_h5(self, wav_file):
         event_file = wav_file[:-3] + 'eventlab'
         speech_time_stamps = self.extract_labels_from_eventlab(event_file)
-        file_fs, data = scipy.io.wavfile.read(wav_file)
+
+        # file_fs, data = scipy.io.wavfile.read(wav_file)
+
+        # fu**ing Octave saved audio in some strange format under this version of Ubuntu,
+        # so we should open files like raw
+        data, file_fs = sf.read(wav_file, channels=1, samplerate=16000,
+                          format='RAW', subtype='PCM_16')
+
+        if len(data) < 1000:
+            print("invalid file " + wav_file)
+            return
+        elif np.max(data) == 0:
+            print("file with no data " + wav_file)
+            return
+
+
         if file_fs != self.fs:
             data = librosa.resample(data, file_fs, self.fs)
         data = data - np.mean(data)
