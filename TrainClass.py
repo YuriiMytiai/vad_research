@@ -13,9 +13,10 @@ class Train:
                  batch_size=10, validation_batch_size=500, num_epochs=10, num_classes=2,
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
                  enable_regularization=False, weights_init=tf.initializers.random_normal,
-                 checkpoint_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\checkpoints',
-                 events_log_dir='C:\\Users\\User\\Desktop\\vad_research\\src\\events',
+                 checkpoint_dir='/home/yurii/Documents/vad_research/vad_research/checkpoints',
+                 events_log_dir='/home/yurii/Documents/vad_research/vad_research/events',
                  validation_cache_dir='D:\\h5dataset\\cache\\',
+                 model_name="my_model",
                  train_valid_freq=50, valid_valid_freq=100):
 
         self.path_to_train_h5 = path_to_train_h5
@@ -24,6 +25,7 @@ class Train:
         self.events_log_dir = events_log_dir
         self.validation_cache_dir = validation_cache_dir
         self.check_paths()
+        self.model_name = model_name
 
         train_file = self.collect_h5_file(self.path_to_train_h5)
         validation_file = self.collect_h5_file(self.path_to_validation_h5)
@@ -47,9 +49,10 @@ class Train:
         self.validation_idxs = list(range(0, self.validation_file['data'].shape[0]))
 
         self.x = tf.placeholder(tf.float32,
-                                shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]),
+                                shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]),
                                 name='raw_input')
         self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
+        self.is_training = tf.placeholder(tf.bool)
 
     def check_paths(self):
         if not os.path.isdir(self.path_to_train_h5):
@@ -131,7 +134,7 @@ class Train:
         train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs)\
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=4)\
+                 num_parallel_calls=6)\
             .batch(self.batch_size_const)\
             .repeat()
         train_iter = train_dataset.make_one_shot_iterator()
@@ -140,12 +143,11 @@ class Train:
             .cache(filename=self.validation_cache_dir)\
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=4)\
+                 num_parallel_calls=6)\
             .batch(self.validation_batch_size)
         validation_iter = validation_dataset.make_one_shot_iterator()
 
-        return train_dataset, train_iter, \
-               validation_dataset, validation_iter
+        return train_dataset, train_iter, validation_dataset, validation_iter
 
     def build_classifier(self, input_size):
 
@@ -158,16 +160,18 @@ class Train:
         else:
             regularizer = None
         # Convolution Layer with 50 filters and a kernel size of 5
-        conv1 = tf.layers.conv2d(x_reshaped, 20, 5, activation=tf.nn.relu, name='conv1',
+        conv1 = tf.layers.conv2d(x_reshaped, filters=32, kernel_size=[5, 5], activation=tf.nn.relu, name='conv1',
                                  kernel_initializer=self.weights_initializer,
                                  kernel_regularizer=regularizer)
+
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
         # Convolution Layer with 50 filters and a kernel size of 5
-        conv2 = tf.layers.conv2d(conv1, 50, 5, activation=tf.nn.relu, name='conv2',
+        conv2 = tf.layers.conv2d(conv1, filters=50, kernel_size=[5, 5], activation=tf.nn.relu, name='conv2',
                                  kernel_initializer=self.weights_initializer,
                                  kernel_regularizer=regularizer)
+
         # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
         conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
 
@@ -184,7 +188,12 @@ class Train:
 
         # Output layer, class prediction
         # out = tf.layers.dense(fc1, self.n_classes, name='out')
-        out = tf.contrib.layers.fully_connected(fc1, num_outputs=self.n_classes,
+
+        # Let's add dropout here
+        drop_out = tf.contrib.layers.dropout(fc1, keep_prob=0.5, is_training=self.is_training)
+
+        # One more FC layer
+        out = tf.contrib.layers.fully_connected(drop_out, num_outputs=self.n_classes,
                                                 biases_initializer=tf.contrib.layers.xavier_initializer(),
                                                 weights_initializer=self.weights_initializer,
                                                 weights_regularizer=regularizer,
@@ -232,13 +241,15 @@ class Train:
 
     def run_training(self, **kwargs):
         input_size = kwargs.get('input_size',
-                                [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1])
+                                [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]])
         num_train_batches, num_validation_batches, train_op, loss, accuracy,\
             merged, train_writer, validation_writer = self.build_classifier(input_size)
         _, train_iter, _, validation_iter = self.build_datasets()
 
         print('Configuring session...\n')
-        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+        # tf.logging.set_verbosity(tf.logging.ERROR)
+        
         with tf.Session(config=config) as sess:
 
             if self.enable_debug_mode:
@@ -249,7 +260,7 @@ class Train:
             # init saver
             saver = tf.train.Saver()
 
-            print('Training...')
+            print('Training...\n')
             for epoch in range(self.num_epochs):
                 print("Epoch {}".format(epoch))
                 tot_loss = 0
@@ -261,35 +272,41 @@ class Train:
                         if batch % self.train_valid_freq == 0:
                             _, loss_value, summary = sess.run([train_op, loss, merged],
                                                               feed_dict={self.x: train_features_,
-                                                                         self.y: train_labels_})
+                                                                         self.y: train_labels_,
+                                                                         self.is_training: True})
                             train_writer.add_summary(summary, epoch * num_train_batches + batch)
                             tot_loss += loss_value
                         else:
                             _ = sess.run(train_op, feed_dict={self.x: train_features_,
-                                                              self.y: train_labels_})
+                                                              self.y: train_labels_,
+                                                              self.is_training: True})
 
                     except tf.errors.OutOfRangeError:
                         break
 
-                    if batch % self.valid_valid_freq == 0:
-                        num_correct = 0
-                        sum_loss = 0
-                        for _ in range(num_validation_batches):
-                            loss_v, acc_v, summary = sess.run([loss, accuracy, merged],
-                                                              feed_dict={self.x: validation_features_,
-                                                                         self.y: validation_labels_})
-                            num_correct += acc_v * self.validation_batch_size
-                            sum_loss += loss_v
-                        validation_writer.add_summary(summary, epoch * num_train_batches + batch)
-                        validation_loss = sum_loss / num_validation_batches
-                        validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
-                        print('Validation Loss: {:6e}'.format(validation_loss))
-                        print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
+                    #train_writer.add_summary(summary, epoch)
 
-                print("\nEpoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}"
+                    #if batch % self.valid_valid_freq == 0:
+                num_correct = 0
+                sum_loss = 0
+                for _ in range(num_validation_batches):
+                    loss_v, acc_v, summary = sess.run([loss, accuracy, merged],
+                                                      feed_dict={self.x: validation_features_,
+                                                                 self.y: validation_labels_,
+                                                                 self.is_training: False})
+                    num_correct += acc_v * self.validation_batch_size
+                    sum_loss += loss_v
+                #validation_writer.add_summary(summary, epoch * num_train_batches + batch)
+                validation_writer.add_summary(summary, (epoch + 1) * num_train_batches)
+                validation_loss = sum_loss / num_validation_batches
+                validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
+                print('Validation Loss: {:6e}'.format(validation_loss))
+                print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
+
+                print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
                       .format(epoch, tot_loss / num_train_batches, validation_loss))
-                checkpoint_path = os.path.join(self.checkpoint_dir, 'ckpt_epoch' + str(epoch))
-                saver.save(sess, checkpoint_path, global_step=epoch)
+
+                saver.save(sess, self.checkpoint_dir + "/" + self.model_name)
 
             self.close_files()
             print('The end of the training')

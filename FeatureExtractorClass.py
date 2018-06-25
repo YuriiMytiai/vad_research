@@ -1,8 +1,5 @@
-import scipy.io.wavfile
-import scipy.signal
 import numpy as np
 import librosa
-#import librosa.display
 import h5py
 import math
 import soundfile as sf
@@ -11,7 +8,7 @@ import soundfile as sf
 class FeatureExtractor:
     def __init__(self, h5_filename, dataset_name='data',
                  fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
-                 norm_target_rms=0.1):
+                 norm_target_rms=0.1, full_spec=False, segment_normalization=False):
 
         self.h5_filename = h5_filename
         self.dataset_name = dataset_name
@@ -24,6 +21,8 @@ class FeatureExtractor:
         self.target_rms = norm_target_rms
         self.spectrogram_len = math.ceil(segment_len / (self.fft_size - self.fft_overlap))
         self.spectrogram_high = math.ceil(fft_size / 2)
+        self.full_spec = full_spec
+        self.segm_norm = segment_normalization
 
         self.num_speech_events = 0
         self.num_nonspeech_events = 0
@@ -34,15 +33,19 @@ class FeatureExtractor:
                                                        maxshape=(None, 1),
                                                        chunks=(1, 1),
                                                        compression="gzip")
+        if full_spec:
+            self.num_channels = 2
+        else:
+            self.num_channels = 1
         self.features_dataset = self.file.create_dataset(self.dataset_name,
-                                                         (1, self.spectrogram_len, self.spectrogram_high),
-                                                         maxshape=(None, self.spectrogram_len, self.spectrogram_high),
-                                                         chunks=(1, self.spectrogram_len, self.spectrogram_high),
-                                                         compression="gzip")
+                                                     (1, self.spectrogram_len, self.spectrogram_high, self.num_channels),
+                                                     maxshape=(None, self.spectrogram_len, self.spectrogram_high, self.num_channels),
+                                                     chunks=(1, self.spectrogram_len, self.spectrogram_high, self.num_channels),
+                                                     compression="gzip")
 
     def add_example_to_h5(self, example, label):
         self.features_dataset.resize((self.features_dataset.shape[0] + 1, self.spectrogram_len,
-                                      self.spectrogram_high))
+                                      self.spectrogram_high, self.num_channels))
         self.features_dataset[-1, :] = example
         self.labels_dataset.resize((self.labels_dataset.shape[0] + 1, 1))
         self.labels_dataset[-1, :] = label
@@ -91,7 +94,10 @@ class FeatureExtractor:
                 end_idx = start_idx + self.segment_len
 
                 buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
-                normalized_data = self.normalization(buffered_data_segment)
+                if self.segm_norm:
+                    normalized_data = self.normalization(buffered_data_segment)
+                else:
+                    normalized_data = buffered_data_segment
                 spectrogram = self.calculate_spectrum(normalized_data)
 
                 self.add_example_to_h5(spectrogram, label)
@@ -155,19 +161,28 @@ class FeatureExtractor:
         for i in range(0, normalized_data.shape[0]):
             windowed_data = normalized_data[i] * np.hanning(self.fft_size)
             mat_spec = np.fft.fft(windowed_data, n=self.fft_size)
-            # amp_spec = mat_spec[int(mat_spec.shape[0]/2):mat_spec.shape[0]]
-            amp_spec = mat_spec[0:int(mat_spec.shape[0] / 2)]
-            spec.append(np.abs(amp_spec) ** 2)
-        return np.asarray(spec)
+            half_spec = mat_spec[0:int(mat_spec.shape[0] / 2)]
+            amp_spec = np.abs(half_spec) ** 2
+            if self.full_spec:
+                phase_spec = np.angle(half_spec)
+                full_spec = np.vstack([amp_spec, phase_spec])
+                spec.append(full_spec.T)
+            else:
+                full_spec = amp_spec
+                spec.append(full_spec)
+        spec = np.asarray(spec)
+        if spec.shape != [self.spectrogram_len, self.spectrogram_high, self.num_channels]:
+            spec = spec.reshape([self.spectrogram_len, self.spectrogram_high, self.num_channels])
+        return spec
 
-    #@staticmethod
-    #def plot_spectrogram(spectrogram):
-    #    import matplotlib.pyplot as plt
-    #    plt.figure(figsize=(10, 4))
-    #    spectrogram = np.transpose(spectrogram)
-    #    librosa.display.specshow(librosa.power_to_db(spectrogram, ref=np.max),
-    #                             y_axis='mel', fmax=8000, x_axis='time')
-    #    plt.colorbar(format='%+2.0f dB')
-    #    plt.title('Mel spectrogram')
-    #    plt.tight_layout()
-    #    plt.show()
+    @staticmethod
+    def plot_spectrogram(spectrogram):
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 4))
+        spectrogram = np.transpose(spectrogram)
+        librosa.display.specshow(librosa.power_to_db(spectrogram, ref=np.max),
+                                 y_axis='mel', fmax=8000, x_axis='time')
+        plt.colorbar(format='%+2.0f dB')
+        plt.title('Mel spectrogram')
+        plt.tight_layout()
+        plt.show()
