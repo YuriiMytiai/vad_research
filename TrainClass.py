@@ -24,8 +24,10 @@ class Train:
         self.checkpoint_dir = checkpoint_dir
         self.events_log_dir = events_log_dir
         self.validation_cache_dir = validation_cache_dir
-        self.check_paths()
         self.model_name = model_name
+
+        self.check_paths()
+
 
         train_file = self.collect_h5_file(self.path_to_train_h5)
         validation_file = self.collect_h5_file(self.path_to_validation_h5)
@@ -48,6 +50,9 @@ class Train:
         self.train_idxs = list(range(0, self.train_file['data'].shape[0]))
         self.validation_idxs = list(range(0, self.validation_file['data'].shape[0]))
 
+        # need it to run sessions in the loop
+        tf.reset_default_graph()
+
         self.x = tf.placeholder(tf.float32,
                                 shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]),
                                 name='raw_input')
@@ -65,14 +70,14 @@ class Train:
             except Exception as e:
                     print(e)
             print('Directory for checkpoints was made: {}'.format(self.checkpoint_dir))
-        if not os.path.isdir(self.events_log_dir):
+        if not os.path.isdir(self.events_log_dir + '/train' + "/" + self.model_name):
             try:
-                os.makedirs(self.events_log_dir + '/train')
+                os.makedirs(self.events_log_dir + '/train' + "/" + self.model_name)
             except Exception as e:
                     print(e)
             print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '/train'))
             try:
-                os.makedirs(self.events_log_dir + '/validation')
+                os.makedirs(self.events_log_dir + '/validation' + "/" + self.model_name)
             except Exception as e:
                     print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
@@ -233,8 +238,10 @@ class Train:
         num_train_batches = self.train_file['data'].shape[0] // self.batch_size_const
         num_validation_batches = self.validation_file['data'].shape[0] // self.validation_batch_size
 
-        train_writer = tf.summary.FileWriter(self.events_log_dir + '/train')
-        validation_writer = tf.summary.FileWriter(self.events_log_dir + '/validation')
+        train_writer = tf.summary.FileWriter(self.events_log_dir + '/train' + "/" + self.model_name,
+                                             filename_suffix=self.model_name)
+        validation_writer = tf.summary.FileWriter(self.events_log_dir + '/validation' + "/" + self.model_name,
+                                                  filename_suffix=self.model_name)
         train_writer.add_graph(tf.get_default_graph())
 
         return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
@@ -284,9 +291,6 @@ class Train:
                     except tf.errors.OutOfRangeError:
                         break
 
-                    #train_writer.add_summary(summary, epoch)
-
-                    #if batch % self.valid_valid_freq == 0:
                 num_correct = 0
                 sum_loss = 0
                 for _ in range(num_validation_batches):

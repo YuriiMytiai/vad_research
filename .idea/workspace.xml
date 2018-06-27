@@ -3,13 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="6c9039cd-20c8-4489-9166-5da3f9314ea9" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DataCollectorClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/DataCollectorClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FeatureExtractorClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeatureExtractorClass.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FeaturesCollectingRunner.py" beforeDir="false" afterPath="$PROJECT_DIR$/FeaturesCollectingRunner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TrainClass.py" beforeDir="false" afterPath="$PROJECT_DIR$/TrainClass.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TrainRunner.py" beforeDir="false" afterPath="$PROJECT_DIR$/TrainRunner.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/events\train/events.out.tfevents.1526149026.pattern-ubu" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/svd.py" beforeDir="false" afterPath="$PROJECT_DIR$/svd.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -23,8 +19,8 @@
       <file leaf-file-name="TrainRunner.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/TrainRunner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="270">
-              <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+            <state relative-caret-position="405">
+              <caret line="27" selection-start-line="27" selection-end-line="27" />
               <folding>
                 <element signature="e#0#28#0" expanded="true" />
               </folding>
@@ -35,8 +31,8 @@
       <file leaf-file-name="TrainClass.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/TrainClass.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="372">
-              <caret line="190" selection-start-line="190" selection-end-line="190" />
+            <state relative-caret-position="330">
+              <caret line="243" column="50" selection-start-line="243" selection-start-column="50" selection-end-line="243" selection-end-column="50" />
             </state>
           </provider>
         </entry>
@@ -44,7 +40,7 @@
       <file leaf-file-name="FeaturesCollectingRunner.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="118">
+            <state relative-caret-position="510">
               <caret line="37" selection-start-line="37" selection-end-line="37" />
               <folding>
                 <element signature="e#0#44#0" expanded="true" />
@@ -233,7 +229,7 @@
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.5006658" side_tool="true" weight="0.4361446" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Python Console" order="7" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49933422" visible="true" weight="0.26987952" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.49933422" weight="0.36506024" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Terminal" order="7" />
       <window_info id="Favorites" order="2" side_tool="true" />
@@ -270,12 +266,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/TrainClass.py</url>
-          <line>50</line>
+          <line>55</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/TrainClass.py</url>
-          <line>119</line>
+          <line>124</line>
           <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
@@ -608,7 +604,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/FeaturesCollectingRunner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="118">
+        <state relative-caret-position="510">
           <caret line="37" selection-start-line="37" selection-end-line="37" />
           <folding>
             <element signature="e#0#44#0" expanded="true" />
@@ -625,15 +621,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/TrainClass.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="372">
-          <caret line="190" selection-start-line="190" selection-end-line="190" />
+        <state relative-caret-position="330">
+          <caret line="243" column="50" selection-start-line="243" selection-start-column="50" selection-end-line="243" selection-end-column="50" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/TrainRunner.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="270">
-          <caret line="18" lean-forward="true" selection-start-line="18" selection-end-line="18" />
+        <state relative-caret-position="405">
+          <caret line="27" selection-start-line="27" selection-end-line="27" />
           <folding>
             <element signature="e#0#28#0" expanded="true" />
           </folding>
