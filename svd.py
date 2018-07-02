@@ -12,6 +12,11 @@ def close_files():
             except:
                 pass  # Was already closed
 
+import soundfile as sf
+audio_file = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/other_noises/UrbanSound/data/street_music/14385.wav"
+data, file_fs = sf.read(audio_file)
+
+
 #f = h5py.File("imagetest.hdf5")
 #dset2 = f.create_dataset('timetraces4', (1000, 100, 200), maxshape=(None, 100, 200), chunks=(1, 100, 200))
 

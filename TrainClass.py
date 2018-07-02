@@ -13,11 +13,13 @@ class Train:
                  batch_size=10, validation_batch_size=500, num_epochs=10, num_classes=2,
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
                  enable_regularization=False, weights_init=tf.initializers.random_normal,
+                 dropout_keep_prob=0.5, enable_dropout=True,
                  checkpoint_dir='/home/yurii/Documents/vad_research/vad_research/checkpoints',
                  events_log_dir='/home/yurii/Documents/vad_research/vad_research/events',
                  validation_cache_dir='D:\\h5dataset\\cache\\',
                  model_name="my_model",
-                 train_valid_freq=50, valid_valid_freq=100):
+                 train_valid_freq=50, valid_valid_freq=100,
+                 use_just_amplitude_spec=False):
 
         self.path_to_train_h5 = path_to_train_h5
         self.path_to_validation_h5 = path_to_validation_h5
@@ -25,9 +27,9 @@ class Train:
         self.events_log_dir = events_log_dir
         self.validation_cache_dir = validation_cache_dir
         self.model_name = model_name
+        self.just_ampl = use_just_amplitude_spec
 
         self.check_paths()
-
 
         train_file = self.collect_h5_file(self.path_to_train_h5)
         validation_file = self.collect_h5_file(self.path_to_validation_h5)
@@ -41,6 +43,8 @@ class Train:
         self.enable_regularization = enable_regularization
         self.regularization = regularization
         self.weights_initializer = weights_init
+        self.enable_dropout = enable_dropout
+        self.keep_prob = dropout_keep_prob
 
         self.train_valid_freq = train_valid_freq
         self.valid_valid_freq = valid_valid_freq
@@ -53,9 +57,12 @@ class Train:
         # need it to run sessions in the loop
         tf.reset_default_graph()
 
-        self.x = tf.placeholder(tf.float32,
-                                shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]),
-                                name='raw_input')
+        if self.just_ampl:
+            self.x = tf.placeholder(tf.float32,
+                                    shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]), name='raw_input')
+        else:
+            self.x = tf.placeholder(tf.float32, shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2],
+                                       self.train_file['data'].shape[3]), name='raw_input')
         self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
         self.is_training = tf.placeholder(tf.bool)
 
@@ -122,14 +129,20 @@ class Train:
         self.validation_file.close()
 
     def _read_py_function_train_(self, idx):
-        spectrogram = self.train_file['data'][idx, :]
+        if self.just_ampl:
+            spectrogram = self.train_file['data'][idx, :, :, 0]
+        else:
+            spectrogram = self.train_file['data'][idx, :]
         label = self.train_file['data_labels'][idx, 0]
         spectrogram = np.float32(spectrogram)
         label = np.float32(label)
         return spectrogram, [label, np.float32(abs(label - 1))]
 
     def _read_py_function_valid_(self, idx):
-        spectrogram = self.validation_file['data'][idx, :]
+        if self.just_ampl:
+            spectrogram = self.validation_file['data'][idx, :, :, 0]
+        else:
+            spectrogram = self.validation_file['data'][idx, :]
         label = self.validation_file['data_labels'][idx, 0]
         spectrogram = np.float32(spectrogram)
         label = np.float32(label)
@@ -195,7 +208,10 @@ class Train:
         # out = tf.layers.dense(fc1, self.n_classes, name='out')
 
         # Let's add dropout here
-        drop_out = tf.contrib.layers.dropout(fc1, keep_prob=0.5, is_training=self.is_training)
+        if self.enable_dropout:
+            drop_out = tf.contrib.layers.dropout(fc1, keep_prob=self.keep_prob, is_training=self.is_training)
+        else:
+            drop_out = fc1
 
         # One more FC layer
         out = tf.contrib.layers.fully_connected(drop_out, num_outputs=self.n_classes,
@@ -247,8 +263,11 @@ class Train:
         return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
 
     def run_training(self, **kwargs):
-        input_size = kwargs.get('input_size',
-                                [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]])
+        if self.just_ampl:
+            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1]
+        else:
+            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]]
+        input_size = kwargs.get('input_size', size_param)
         num_train_batches, num_validation_batches, train_op, loss, accuracy,\
             merged, train_writer, validation_writer = self.build_classifier(input_size)
         _, train_iter, _, validation_iter = self.build_datasets()
