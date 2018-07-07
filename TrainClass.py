@@ -57,17 +57,14 @@ class Train:
         # need it to run sessions in the loop
         tf.reset_default_graph()
 
-        # if self.just_ampl:
-        #    self.x = tf.placeholder(tf.float32,
-        #                            shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]),
-        #                            name='raw_input')
-        # else:
-        #    self.x = tf.placeholder(tf.float32,
-        #                            shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2],
-        #                                   self.train_file['data'].shape[3]), name='raw_input')
-        # self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
+        if self.just_ampl:
+            self.x = tf.placeholder(tf.float32,
+                                    shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]), name='raw_input')
+        else:
+            self.x = tf.placeholder(tf.float32, shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2],
+                                       self.train_file['data'].shape[3]), name='raw_input')
+        self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
         self.is_training = tf.placeholder(tf.bool)
-        self.handle = None
 
     def check_paths(self):
         if not os.path.isdir(self.path_to_train_h5):
@@ -78,36 +75,36 @@ class Train:
             try:
                 os.makedirs(self.checkpoint_dir)
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for checkpoints was made: {}'.format(self.checkpoint_dir))
         if not os.path.isdir(self.events_log_dir + '/train' + "/" + self.model_name):
             try:
                 os.makedirs(self.events_log_dir + '/train' + "/" + self.model_name)
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '/train'))
             try:
                 os.makedirs(self.events_log_dir + '/validation' + "/" + self.model_name)
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
         if not os.path.isdir(self.events_log_dir + '/train'):
             try:
                 os.makedirs(self.events_log_dir + '/train')
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for train events logging was made: {}'.format(self.checkpoint_dir + '/train'))
         if not os.path.isdir(self.events_log_dir + '/validation'):
             try:
                 os.makedirs(self.events_log_dir + '/validation')
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
         if not os.path.isdir(self.validation_cache_dir):
             try:
                 os.makedirs(self.validation_cache_dir)
             except Exception as e:
-                print(e)
+                    print(e)
             print('Directory for validation cache was made: {}'.format(self.validation_cache_dir))
         for _, _, files in os.walk(self.validation_cache_dir):
             if files:
@@ -152,42 +149,28 @@ class Train:
         return spectrogram, [label, np.float32(abs(label - 1))]
 
     def build_datasets(self):
-        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs) \
+        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs)\
             .map(lambda file_idx: tuple(tf.py_func(
-            self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=6) \
-            .batch(self.batch_size_const) \
-            .repeat() \
-            .prefetch(self.train_file['data'].shape[0] // self.batch_size_const)
-
-        # train_iter = train_dataset.make_one_shot_iterator()
-
-        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs) \
-            .map(lambda file_idx: tuple(tf.py_func(
-            self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=6) \
-            .batch(self.validation_batch_size) \
-            .cache() \
-            .prefetch(self.validation_file['data'].shape[0] // self.validation_batch_size)
-
-        # validation_iter = validation_dataset.make_one_shot_iterator()
-
-        self.handle = tf.placeholder(tf.string, shape=[])
-        iterator = tf.data.Iterator.from_string_handle(
-            self.handle, train_dataset.output_types, train_dataset.output_shapes)
-
+                self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
+                 num_parallel_calls=6)\
+            .batch(self.batch_size_const)\
+            .repeat()
         train_iter = train_dataset.make_one_shot_iterator()
-        validation_iter = validation_dataset.make_initializable_iterator()
 
-        return train_dataset, train_iter, validation_dataset, validation_iter, iterator
+        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs)\
+            .cache(filename=self.validation_cache_dir)\
+            .map(lambda file_idx: tuple(tf.py_func(
+                self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
+                 num_parallel_calls=6)\
+            .batch(self.validation_batch_size)
+        validation_iter = validation_dataset.make_one_shot_iterator()
 
-    def build_classifier(self, input_size, dataset_iterator):
+        return train_dataset, train_iter, validation_dataset, validation_iter
 
-        x, y = dataset_iterator.get_next()
-        print(x)
+    def build_classifier(self, input_size):
 
         with tf.name_scope('inputs'):
-            x_reshaped = tf.reshape(x, input_size, name='input_tensor')
+            x_reshaped = tf.reshape(self.x, input_size, name='input_tensor')
 
         # Regularization:
         if self.enable_regularization:
@@ -218,6 +201,12 @@ class Train:
                                                 weights_regularizer=regularizer,
                                                 activation_fn=tf.nn.relu)
 
+        # Fully connected layer (in tf contrib folder for now)
+        # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
+
+        # Output layer, class prediction
+        # out = tf.layers.dense(fc1, self.n_classes, name='out')
+
         # Let's add dropout here
         if self.enable_dropout:
             drop_out = tf.contrib.layers.dropout(fc1, keep_prob=self.keep_prob, is_training=self.is_training)
@@ -240,7 +229,7 @@ class Train:
         # Define loss and optimizer
         with tf.name_scope('loss'):
             loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(
-                logits=logits_out_layer, labels=tf.cast(y, dtype=tf.int32)), name='loss')
+                logits=logits_out_layer, labels=tf.cast(self.y, dtype=tf.int32)), name='loss')
 
             # loss = tf.reduce_mean(tf.losses.huber_loss(tf.cast(self.y, dtype=tf.int32), pred_probas), name='loss')
             if self.enable_regularization:
@@ -250,7 +239,7 @@ class Train:
         tf.summary.scalar('loss', loss)
 
         with tf.name_scope('accuracy'):
-            correct_prediction = tf.equal(tf.argmax(out, 1), tf.argmax(y, 1), name='correct_prediction')
+            correct_prediction = tf.equal(tf.argmax(out, 1), tf.argmax(self.y, 1), name='correct_prediction')
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32), name='accuracy')
         tf.summary.scalar('accuracy', accuracy)
 
@@ -273,60 +262,20 @@ class Train:
 
         return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
 
-    def validation_executor(self, num_validation_batches, sess, loss, accuracy, merged, validation_writer, epoch,
-                            num_train_batches, validation_handle):
-
-        num_correct = 0
-        sum_loss = 0
-        for _ in tqdm.tqdm(range(num_validation_batches)):
-            loss_v, acc_v, summary = sess.run([loss, accuracy, merged],
-                                              feed_dict={self.is_training: False,
-                                                         self.handle: validation_handle})
-            num_correct += acc_v * self.validation_batch_size
-            sum_loss += loss_v
-        validation_writer.add_summary(summary, (epoch + 1) * num_train_batches)
-        validation_loss = sum_loss / num_validation_batches
-        validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
-        print('Validation Loss: {:6e}'.format(validation_loss))
-        print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
-        return sess, validation_loss
-
-    def train_executor(self, num_train_batches, sess, train_op, loss, merged, epoch,
-                       train_writer, train_handle):
-
-        tot_loss = 0
-        for batch in tqdm.tqdm(range(num_train_batches)):
-            try:
-                if batch % self.train_valid_freq == 0:
-                    _, loss_value, summary = sess.run([train_op, loss, merged],
-                                                      feed_dict={self.is_training: True,
-                                                                 self.handle: train_handle})
-                    train_writer.add_summary(summary, epoch * num_train_batches + batch)
-                    tot_loss += loss_value
-                else:
-                    _ = sess.run(train_op, feed_dict={self.is_training: True,
-                                                      self.handle: train_handle})
-            except tf.errors.OutOfRangeError:
-                break
-        return sess, tot_loss
-
     def run_training(self, **kwargs):
         if self.just_ampl:
             size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1]
         else:
-            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2],
-                          self.train_file['data'].shape[3]]
+            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]]
         input_size = kwargs.get('input_size', size_param)
-
-        _, train_iter, _, validation_iter, dataset_iterator = self.build_datasets()
-        num_train_batches, num_validation_batches, train_op, loss, accuracy, \
-        merged, train_writer, validation_writer = self.build_classifier(input_size, dataset_iterator)
+        num_train_batches, num_validation_batches, train_op, loss, accuracy,\
+            merged, train_writer, validation_writer = self.build_classifier(input_size)
+        _, train_iter, _, validation_iter = self.build_datasets()
 
         print('Configuring session...\n')
-        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
-        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False, gpu_options=gpu_options)
+        config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
         # tf.logging.set_verbosity(tf.logging.ERROR)
-
+        
         with tf.Session(config=config) as sess:
 
             if self.enable_debug_mode:
@@ -334,36 +283,54 @@ class Train:
 
             sess.run(tf.global_variables_initializer())
 
-            train_handle = sess.run(train_iter.string_handle())
-            validation_handle = sess.run(validation_iter.string_handle())
-
             # init saver
             saver = tf.train.Saver()
 
-            # execute validation before training
-            print("\nValidation loss and accuracy just after initialization:")
-            sess.run(validation_iter.initializer)
-            _, _ = self.validation_executor(num_validation_batches, sess, loss, accuracy, merged,
-                                            validation_writer, -1, num_train_batches,
-                                            validation_handle)
+            next_train_elem = train_iter.get_next()
+            next_validation_elem = validation_iter.get_next()
 
-            print('\nTraining...\n')
+            print('Training...\n')
             for epoch in range(self.num_epochs):
                 print("Epoch {}".format(epoch))
+                tot_loss = 0
+                for batch in tqdm.tqdm(range(num_train_batches)):
+                    try:
+                        train_features_, train_labels_ = sess.run(next_train_elem)
+                        if batch % self.train_valid_freq == 0:
+                            _, loss_value, summary = sess.run([train_op, loss, merged],
+                                                              feed_dict={self.x: train_features_,
+                                                                         self.y: train_labels_,
+                                                                         self.is_training: True})
+                            train_writer.add_summary(summary, epoch * num_train_batches + batch)
+                            tot_loss += loss_value
+                        else:
+                            _ = sess.run(train_op, feed_dict={self.x: train_features_,
+                                                              self.y: train_labels_,
+                                                              self.is_training: True})
 
-                # train_features_, train_labels_ = sess.run(train_iter.get_next())
-                # validation_features_, validation_labels_ = sess.run(validation_iter.get_next())
+                    except tf.errors.OutOfRangeError:
+                        break
 
-                # sess.run(train_iter.initializer)
-                sess, tot_loss = self.train_executor(num_train_batches, sess, train_op, loss, merged, epoch,
-                                                     train_writer, train_handle)
+                num_correct = 0
+                sum_loss = 0
+                for _ in range(num_validation_batches):
+                    validation_features_, validation_labels_ = sess.run(next_validation_elem)
+                    loss_v, acc_v, summary = sess.run([loss, accuracy, merged],
+                                                      feed_dict={self.x: validation_features_,
+                                                                 self.y: validation_labels_,
+                                                                 self.is_training: False})
+                    num_correct += acc_v * self.validation_batch_size
+                    sum_loss += loss_v
+                #validation_writer.add_summary(summary, epoch * num_train_batches + batch)
+                validation_writer.add_summary(summary, (epoch + 1) * num_train_batches)
+                validation_loss = sum_loss / num_validation_batches
+                validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
+                print('Validation Loss: {:6e}'.format(validation_loss))
+                print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
 
-                # sess.run(validation_iter.initializer)
-                sess, validation_loss = self.validation_executor(num_validation_batches, sess, loss, accuracy, merged,
-                                                                 validation_writer, epoch, num_train_batches,
-                                                                 validation_handle)
                 print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
                       .format(epoch, tot_loss / num_train_batches, validation_loss))
+
                 saver.save(sess, self.checkpoint_dir + "/" + self.model_name)
 
             self.close_files()
