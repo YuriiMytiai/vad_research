@@ -60,13 +60,6 @@ class Train:
         tf.reset_default_graph()
         self.train_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
         self.validation_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
-        if self.just_ampl:
-            self.x = tf.placeholder(tf.float32,
-                                    shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2]), name='raw_input')
-        else:
-            self.x = tf.placeholder(tf.float32, shape=(None, self.train_file['data'].shape[1], self.train_file['data'].shape[2],
-                                       self.train_file['data'].shape[3]), name='raw_input')
-        self.y = tf.placeholder(tf.float32, shape=(None, 2), name='features')
         self.is_training = tf.placeholder(tf.bool)
 
     def check_paths(self):
@@ -156,8 +149,8 @@ class Train:
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
                  num_parallel_calls=6) \
-            .batch(self.batch_size_const) \
-            .prefetch(self.train_file['data'].shape[0] // self.batch_size_const) \
+            .prefetch(6) \
+            .batch(self.batch_size_const)\
             .repeat()
         train_iter = train_dataset.make_initializable_iterator()
 
@@ -165,19 +158,14 @@ class Train:
             .map(lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
                  num_parallel_calls=6) \
+            .prefetch(6) \
             .batch(self.validation_batch_size) \
-            .cache() \
-            .prefetch(self.validation_file['data'].shape[0] // self.validation_batch_size)
+            .cache()
         validation_iter = validation_dataset.make_initializable_iterator()
 
         return train_dataset, train_iter, validation_dataset, validation_iter
 
     def build_classifier(self, input_size, train_iter, validation_iter):
-
-        #if self.is_training:
-        #    x, y = train_iter.get_next()
-        #else:
-        #    x, y = validation_iter.get_next()
 
         x, y = tf.cond(tf.equal(self.is_training, tf.constant(True)),
                        lambda: train_iter.get_next(),
@@ -298,8 +286,6 @@ class Train:
         print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
         return sess, validation_loss
 
-
-
     def run_training(self, **kwargs):
         if self.just_ampl:
             size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1]
@@ -346,6 +332,7 @@ class Train:
 
                     except tf.errors.OutOfRangeError:
                         break
+
                 sess, validation_loss = self.validation_loop(sess, num_validation_batches, loss, accuracy, merged,
                                                              epoch, num_train_batches, validation_writer)
                 print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
