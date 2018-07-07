@@ -3,9 +3,10 @@ import tensorflow as tf
 
 
 my_hdd = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/"
+my_datasets_on_ssd = "/home/yurii/Documents/datasets/"
 
-path_to_h5 = my_hdd + "datasets/h5-new_data"
-
+# path_to_h5 = my_hdd + "datasets/h5-new_data"
+path_to_h5 = my_datasets_on_ssd + "h5-new_data"
 
 
 
