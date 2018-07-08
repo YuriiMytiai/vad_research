@@ -146,20 +146,18 @@ class Train:
 
     def build_datasets(self):
         train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs_placeholder)\
-            .map(lambda file_idx: tuple(tf.py_func(
+            .apply(tf.contrib.data.map_and_batch(map_func=lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=6) \
+                 batch_size=self.batch_size_const))\
             .prefetch(6) \
-            .batch(self.batch_size_const)\
             .repeat()
         train_iter = train_dataset.make_initializable_iterator()
 
-        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs_placeholder)\
-            .map(lambda file_idx: tuple(tf.py_func(
+        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs_placeholder) \
+            .apply(tf.contrib.data.map_and_batch(map_func=lambda file_idx: tuple(tf.py_func(
                 self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
-                 num_parallel_calls=6) \
+                                                 batch_size=self.validation_batch_size)) \
             .prefetch(6) \
-            .batch(self.validation_batch_size) \
             .cache()
         validation_iter = validation_dataset.make_initializable_iterator()
 
@@ -167,17 +165,14 @@ class Train:
 
     def build_classifier(self, input_size, train_iter, validation_iter):
 
+
         x, y = tf.cond(tf.equal(self.is_training, tf.constant(True)),
                        lambda: train_iter.get_next(),
                        lambda: validation_iter.get_next())
 
         with tf.name_scope('inputs'):
             x_reshaped = tf.reshape(x, input_size, name='input_tensor')
-            y_reshaped =  tf.cond(tf.equal(self.is_training, tf.constant(True)),
-                       lambda: tf.reshape(y, [self.batch_size_const, 2], name="labels"),
-                       lambda: tf.reshape(y, [self.validation_batch_size, 2], name="labels"))
-
-
+            y_reshaped = tf.reshape(y, [-1, 2], name="labels")
 
         # Regularization:
         if self.enable_regularization:
@@ -298,6 +293,8 @@ class Train:
 
         print('Configuring session...\n')
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
+        #config.gpu_options.allow_growth = True
+        #config.gpu_options.per_process_gpu_memory_fraction = 0.9
         # tf.logging.set_verbosity(tf.logging.ERROR)
         
         with tf.Session(config=config) as sess:
