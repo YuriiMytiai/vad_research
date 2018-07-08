@@ -19,7 +19,7 @@ class Train:
                  validation_cache_dir='D:\\h5dataset\\cache\\',
                  model_name="my_model",
                  train_valid_freq=50, valid_valid_freq=100,
-                 use_just_amplitude_spec=False):
+                 use_just_amplitude_spec=False, num_train_examples=None, num_validation_examples=None):
 
         self.path_to_train_h5 = path_to_train_h5
         self.path_to_validation_h5 = path_to_validation_h5
@@ -31,8 +31,11 @@ class Train:
 
         self.check_paths()
 
-        train_file = self.collect_h5_file(self.path_to_train_h5)
-        validation_file = self.collect_h5_file(self.path_to_validation_h5)
+        #train_file = self.collect_h5_file(self.path_to_train_h5)
+        #validation_file = self.collect_h5_file(self.path_to_validation_h5)
+        self.train_file = self.collect_tfrecords_file(self.path_to_train_h5)
+        self.validation_file = self.collect_tfrecords_file(self.path_to_validation_h5)
+
         self.enable_debug_mode = enable_debug_mode
 
         self.validation_batch_size = validation_batch_size
@@ -49,17 +52,20 @@ class Train:
         self.train_valid_freq = train_valid_freq
         self.valid_valid_freq = valid_valid_freq
 
-        self.train_file = h5py.File(train_file, 'r')
-        self.validation_file = h5py.File(validation_file, 'r')
-        self.train_idxs = np.asarray(list(range(0, self.train_file['data'].shape[0])))
-        self.train_idxs = np.reshape(self.train_idxs, (self.train_file['data'].shape[0], 1))
-        self.validation_idxs = np.asarray(list(range(0, self.validation_file['data'].shape[0])))
-        self.validation_idxs = np.reshape(self.validation_idxs, (self.validation_file['data'].shape[0], 1))
+        self.num_train_batches = num_train_examples // self.batch_size_const
+        self.num_validation_batches = num_validation_examples // self.validation_batch_size
+
+        #self.train_file = h5py.File(train_file, 'r')
+        #self.validation_file = h5py.File(validation_file, 'r')
+        #self.train_idxs = np.asarray(list(range(0, self.train_file['data'].shape[0])))
+        #self.train_idxs = np.reshape(self.train_idxs, (self.train_file['data'].shape[0], 1))
+        #self.validation_idxs = np.asarray(list(range(0, self.validation_file['data'].shape[0])))
+        #self.validation_idxs = np.reshape(self.validation_idxs, (self.validation_file['data'].shape[0], 1))
 
         # need it to run sessions in the loop
         tf.reset_default_graph()
-        self.train_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
-        self.validation_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
+        #self.train_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
+        #self.validation_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
         self.is_training = tf.placeholder(tf.bool)
 
     def check_paths(self):
@@ -120,51 +126,59 @@ class Train:
                 if file.endswith(".hdf5"):
                     return os.path.join(root, file)
 
+    @staticmethod
+    def collect_tfrecords_file(path):
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                if file.endswith(".tfrecords"):
+                    return os.path.join(root, file)
+
+    @staticmethod
+    def count_number_of_examples(tfrecords_file):
+        c = 0
+        for _ in tf.python_io.tf_record_iterator(tfrecords_file):
+            c += 1
+        return c
+
     def close_files(self):
         self.train_file.close()
         self.validation_file.close()
 
-    def _read_py_function_train_(self, idx):
+    def _read_py_function(self, example):
+        feature = {"label": tf.FixedLenFeature([], tf.int64),
+                   "spectrogram": tf.FixedLenFeature([], tf.string)}
+        # Decode the record read by the reader
+        features = tf.parse_single_example(example, features=feature)
+        # Convert the image data from string back to the numbers
+        image = tf.decode_raw(features["spectrogram"], tf.float32)
+        # Cast label data into int32
+        label = tf.cast(features["label"], tf.int32)
+        label_rev = label - 1
+        # Reshape image data into the original shape
+        image = tf.reshape(image, [21, 256, 2])
         if self.just_ampl:
-            spectrogram = self.train_file['data'][idx, :, :, 0]
-        else:
-            spectrogram = self.train_file['data'][idx, :]
-        label = self.train_file['data_labels'][idx, 0]
-        spectrogram = np.float32(spectrogram)
-        label = np.float32(label)
-        return spectrogram, [label, np.float32(abs(label - 1))]
-
-    def _read_py_function_valid_(self, idx):
-        if self.just_ampl:
-            spectrogram = self.validation_file['data'][idx, :, :, 0]
-        else:
-            spectrogram = self.validation_file['data'][idx, :]
-        label = self.validation_file['data_labels'][idx, 0]
-        spectrogram = np.float32(spectrogram)
-        label = np.float32(label)
-        return spectrogram, [label, np.float32(abs(label - 1))]
+            image = image[:, :, 0]
+        return image, tf.stack([label, tf.abs(label_rev)], axis=0)
 
     def build_datasets(self):
-        train_dataset = tf.data.Dataset.from_tensor_slices(self.train_idxs_placeholder)\
-            .apply(tf.contrib.data.map_and_batch(map_func=lambda file_idx: tuple(tf.py_func(
-                self._read_py_function_train_, [file_idx], [tf.float32, tf.float32])),
-                 batch_size=self.batch_size_const))\
-            .prefetch(6) \
+        train_dataset = tf.data.TFRecordDataset([self.train_file])\
+            .map(self._read_py_function)\
+            .batch(self.batch_size_const)\
+            .prefetch(self.batch_size_const * 10) \
             .repeat()
-        train_iter = train_dataset.make_initializable_iterator()
+        train_iter = train_dataset.make_one_shot_iterator()
 
-        validation_dataset = tf.data.Dataset.from_tensor_slices(self.validation_idxs_placeholder) \
-            .apply(tf.contrib.data.map_and_batch(map_func=lambda file_idx: tuple(tf.py_func(
-                self._read_py_function_valid_, [file_idx], [tf.float32, tf.float32])),
-                                                 batch_size=self.validation_batch_size)) \
-            .prefetch(6) \
-            .cache()
-        validation_iter = validation_dataset.make_initializable_iterator()
+        validation_dataset = tf.data.TFRecordDataset([self.validation_file]) \
+            .map(self._read_py_function) \
+            .batch(self.validation_batch_size) \
+            .prefetch(self.validation_batch_size * 10) \
+            .cache() \
+            .repeat()
+        validation_iter = validation_dataset.make_one_shot_iterator()
 
         return train_dataset, train_iter, validation_dataset, validation_iter
 
     def build_classifier(self, input_size, train_iter, validation_iter):
-
 
         x, y = tf.cond(tf.equal(self.is_training, tf.constant(True)),
                        lambda: train_iter.get_next(),
@@ -253,42 +267,38 @@ class Train:
         writer.add_graph(tf.get_default_graph())
         merged = tf.summary.merge_all()  # merge accuracy & loss
 
-        num_train_batches = self.train_file['data'].shape[0] // self.batch_size_const
-        num_validation_batches = self.validation_file['data'].shape[0] // self.validation_batch_size
-
         train_writer = tf.summary.FileWriter(self.events_log_dir + '/train' + "/" + self.model_name,
                                              filename_suffix=self.model_name)
         validation_writer = tf.summary.FileWriter(self.events_log_dir + '/validation' + "/" + self.model_name,
                                                   filename_suffix=self.model_name)
         train_writer.add_graph(tf.get_default_graph())
 
-        return num_train_batches, num_validation_batches, train_op, loss, accuracy, merged, train_writer, validation_writer
+        return train_op, loss, accuracy, merged, train_writer, validation_writer
 
-    def validation_loop(self, sess, num_validation_batches, loss, accuracy, merged, epoch, num_train_batches,
-                        validation_writer):
+    def validation_loop(self, sess, loss, accuracy, merged, epoch, validation_writer):
         num_correct = 0
         sum_loss = 0
-        for _ in tqdm.tqdm(range(num_validation_batches)):
+        for _ in tqdm.tqdm(range(self.num_validation_batches)):
             loss_v, acc_v, summary = sess.run([loss, accuracy, merged],
                                               feed_dict={self.is_training: False})
             num_correct += acc_v * self.validation_batch_size
             sum_loss += loss_v
         # validation_writer.add_summary(summary, epoch * num_train_batches + batch)
-        validation_writer.add_summary(summary, (epoch + 1) * num_train_batches)
-        validation_loss = sum_loss / num_validation_batches
-        validation_accuracy = num_correct / (self.validation_batch_size * num_validation_batches)
+        validation_writer.add_summary(summary, (epoch + 1) * self.num_train_batches)
+        validation_loss = sum_loss / self.num_validation_batches
+        validation_accuracy = num_correct / (self.validation_batch_size * self.num_validation_batches)
         print('Validation Loss: {:6e}'.format(validation_loss))
         print('Validation Accuracy: {:.3f}'.format(validation_accuracy))
         return sess, validation_loss
 
     def run_training(self, **kwargs):
         if self.just_ampl:
-            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], 1]
+            size_param = [-1, 21, 256, 1]
         else:
-            size_param = [-1, self.train_file['data'].shape[1], self.train_file['data'].shape[2], self.train_file['data'].shape[3]]
+            size_param = [-1, 21, 256, 2]
         input_size = kwargs.get('input_size', size_param)
         _, train_iter, _, validation_iter = self.build_datasets()
-        num_train_batches, num_validation_batches, train_op, loss, accuracy,\
+        train_op, loss, accuracy,\
             merged, train_writer, validation_writer = self.build_classifier(input_size, train_iter, validation_iter)
 
         print('Configuring session...\n')
@@ -306,23 +316,25 @@ class Train:
             # init saver
             saver = tf.train.Saver()
 
-            sess.run(train_iter.initializer, feed_dict={self.train_idxs_placeholder: self.train_idxs})
-            sess.run(validation_iter.initializer, feed_dict={self.validation_idxs_placeholder: self.validation_idxs})
+            #sess.run(train_iter.initializer, feed_dict={self.train_idxs_placeholder: self.train_idxs})
+            #sess.run(validation_iter.initializer, feed_dict={self.validation_idxs_placeholder: self.validation_idxs})
+            #sess.run(train_iter.initializer)
+            #sess.run(validation_iter.initializer)
 
             print("Validation before training:\n")
-            sess, validation_loss = self.validation_loop(sess, num_validation_batches, loss, accuracy, merged,
-                                                         -1, num_train_batches, validation_writer)
+            sess, validation_loss = self.validation_loop(sess, loss, accuracy, merged,
+                                                         -1, validation_writer)
 
             print('Training...\n')
             for epoch in range(self.num_epochs):
                 print("Epoch {}".format(epoch))
                 tot_loss = 0
-                for batch in tqdm.tqdm(range(num_train_batches)):
+                for batch in tqdm.tqdm(range(self.num_train_batches)):
                     try:
                         if batch % self.train_valid_freq == 0:
                             _, loss_value, summary = sess.run([train_op, loss, merged],
                                                               feed_dict={self.is_training: True})
-                            train_writer.add_summary(summary, epoch * num_train_batches + batch)
+                            train_writer.add_summary(summary, epoch * self.num_train_batches + batch)
                             tot_loss += loss_value
                         else:
                             _ = sess.run(train_op, feed_dict={self.is_training: True})
@@ -330,10 +342,10 @@ class Train:
                     except tf.errors.OutOfRangeError:
                         break
 
-                sess, validation_loss = self.validation_loop(sess, num_validation_batches, loss, accuracy, merged,
-                                                             epoch, num_train_batches, validation_writer)
+                sess, validation_loss = self.validation_loop(sess, loss, accuracy, merged,
+                                                             epoch, validation_writer)
                 print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
-                      .format(epoch, tot_loss / num_train_batches, validation_loss))
+                      .format(epoch, tot_loss / self.num_train_batches, validation_loss))
                 saver.save(sess, self.checkpoint_dir + "/" + self.model_name)
 
             self.close_files()
