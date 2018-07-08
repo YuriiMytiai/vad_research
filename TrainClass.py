@@ -1,15 +1,13 @@
 import tensorflow as tf
-import numpy as np
 import os
-import h5py
 import tqdm
 from tensorflow.python import debug as tf_debug
 
 
 class Train:
 
-    def __init__(self, path_to_train_h5="D:\\h5dataset\\train",
-                 path_to_validation_h5="D:\\h5dataset\\validation",
+    def __init__(self, path_to_train_dataset="D:\\h5dataset\\train",
+                 path_to_validation_dataset="D:\\h5dataset\\validation",
                  batch_size=10, validation_batch_size=500, num_epochs=10, num_classes=2,
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
                  enable_regularization=False, weights_init=tf.initializers.random_normal,
@@ -21,8 +19,8 @@ class Train:
                  train_valid_freq=50, valid_valid_freq=100,
                  use_just_amplitude_spec=False, num_train_examples=None, num_validation_examples=None):
 
-        self.path_to_train_h5 = path_to_train_h5
-        self.path_to_validation_h5 = path_to_validation_h5
+        self.path_to_train_dataset = path_to_train_dataset
+        self.path_to_validation_dataset = path_to_validation_dataset
         self.checkpoint_dir = checkpoint_dir
         self.events_log_dir = events_log_dir
         self.validation_cache_dir = validation_cache_dir
@@ -30,11 +28,8 @@ class Train:
         self.just_ampl = use_just_amplitude_spec
 
         self.check_paths()
-
-        #train_file = self.collect_h5_file(self.path_to_train_h5)
-        #validation_file = self.collect_h5_file(self.path_to_validation_h5)
-        self.train_file = self.collect_tfrecords_file(self.path_to_train_h5)
-        self.validation_file = self.collect_tfrecords_file(self.path_to_validation_h5)
+        self.train_file = self.collect_tfrecords_file(self.path_to_train_dataset)
+        self.validation_file = self.collect_tfrecords_file(self.path_to_validation_dataset)
 
         self.enable_debug_mode = enable_debug_mode
 
@@ -55,24 +50,15 @@ class Train:
         self.num_train_batches = num_train_examples // self.batch_size_const
         self.num_validation_batches = num_validation_examples // self.validation_batch_size
 
-        #self.train_file = h5py.File(train_file, 'r')
-        #self.validation_file = h5py.File(validation_file, 'r')
-        #self.train_idxs = np.asarray(list(range(0, self.train_file['data'].shape[0])))
-        #self.train_idxs = np.reshape(self.train_idxs, (self.train_file['data'].shape[0], 1))
-        #self.validation_idxs = np.asarray(list(range(0, self.validation_file['data'].shape[0])))
-        #self.validation_idxs = np.reshape(self.validation_idxs, (self.validation_file['data'].shape[0], 1))
-
         # need it to run sessions in the loop
         tf.reset_default_graph()
-        #self.train_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
-        #self.validation_idxs_placeholder = tf.placeholder(tf.float32, shape=[None, 1])
         self.is_training = tf.placeholder(tf.bool)
 
     def check_paths(self):
-        if not os.path.isdir(self.path_to_train_h5):
-            raise FileExistsError("Train path: {} do not exist!".format(self.path_to_train_h5))
-        if not os.path.isdir(self.path_to_validation_h5):
-            raise FileExistsError("Validation path: {} do not exist!".format(self.path_to_train_h5))
+        if not os.path.isdir(self.path_to_train_dataset):
+            raise FileExistsError("Train path: {} do not exist!".format(self.path_to_train_dataset))
+        if not os.path.isdir(self.path_to_validation_dataset):
+            raise FileExistsError("Validation path: {} do not exist!".format(self.path_to_train_dataset))
         if not os.path.isdir(self.checkpoint_dir):
             try:
                 os.makedirs(self.checkpoint_dir)
@@ -303,8 +289,8 @@ class Train:
 
         print('Configuring session...\n')
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
-        #config.gpu_options.allow_growth = True
-        #config.gpu_options.per_process_gpu_memory_fraction = 0.9
+        # config.gpu_options.allow_growth = True
+        # config.gpu_options.per_process_gpu_memory_fraction = 0.9
         # tf.logging.set_verbosity(tf.logging.ERROR)
         
         with tf.Session(config=config) as sess:
@@ -315,11 +301,6 @@ class Train:
 
             # init saver
             saver = tf.train.Saver()
-
-            #sess.run(train_iter.initializer, feed_dict={self.train_idxs_placeholder: self.train_idxs})
-            #sess.run(validation_iter.initializer, feed_dict={self.validation_idxs_placeholder: self.validation_idxs})
-            #sess.run(train_iter.initializer)
-            #sess.run(validation_iter.initializer)
 
             print("Validation before training:\n")
             sess, validation_loss = self.validation_loop(sess, loss, accuracy, merged,
