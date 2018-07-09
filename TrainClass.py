@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 import tqdm
 from tensorflow.python import debug as tf_debug
+from datetime import datetime
 
 
 class Train:
@@ -14,16 +15,14 @@ class Train:
                  dropout_keep_prob=0.5, enable_dropout=True,
                  checkpoint_dir='/home/yurii/Documents/vad_research/vad_research/checkpoints',
                  events_log_dir='/home/yurii/Documents/vad_research/vad_research/events',
-                 validation_cache_dir='D:\\h5dataset\\cache\\',
                  model_name="my_model",
-                 train_valid_freq=50, valid_valid_freq=100,
+                 train_valid_freq=50,
                  use_just_amplitude_spec=False, num_train_examples=None, num_validation_examples=None):
 
         self.path_to_train_dataset = path_to_train_dataset
         self.path_to_validation_dataset = path_to_validation_dataset
         self.checkpoint_dir = checkpoint_dir
         self.events_log_dir = events_log_dir
-        self.validation_cache_dir = validation_cache_dir
         self.model_name = model_name
         self.just_ampl = use_just_amplitude_spec
 
@@ -45,7 +44,6 @@ class Train:
         self.keep_prob = dropout_keep_prob
 
         self.train_valid_freq = train_valid_freq
-        self.valid_valid_freq = valid_valid_freq
 
         self.num_train_batches = num_train_examples // self.batch_size_const
         self.num_validation_batches = num_validation_examples // self.validation_batch_size
@@ -88,22 +86,6 @@ class Train:
             except Exception as e:
                     print(e)
             print('Directory for validation events logging was made: {}'.format(self.checkpoint_dir + '/validation'))
-        if not os.path.isdir(self.validation_cache_dir):
-            try:
-                os.makedirs(self.validation_cache_dir)
-            except Exception as e:
-                    print(e)
-            print('Directory for validation cache was made: {}'.format(self.validation_cache_dir))
-        for _, _, files in os.walk(self.validation_cache_dir):
-            if files:
-                print('All files from {} will be deleted!'.format(self.validation_cache_dir))
-                for file in files:
-                    file_path = os.path.join(self.validation_cache_dir, file)
-                    try:
-                        if os.path.isfile(file_path):
-                            os.unlink(file_path)
-                    except Exception as e:
-                        print(e)
 
     @staticmethod
     def collect_h5_file(path):
@@ -150,14 +132,14 @@ class Train:
         train_dataset = tf.data.TFRecordDataset([self.train_file])\
             .map(self._read_py_function)\
             .batch(self.batch_size_const)\
-            .prefetch(self.batch_size_const * 10) \
+            .prefetch(self.batch_size_const * 2) \
             .repeat()
         train_iter = train_dataset.make_one_shot_iterator()
 
         validation_dataset = tf.data.TFRecordDataset([self.validation_file]) \
             .map(self._read_py_function) \
             .batch(self.validation_batch_size) \
-            .prefetch(self.validation_batch_size * 10) \
+            .prefetch(self.validation_batch_size * 2) \
             .cache() \
             .repeat()
         validation_iter = validation_dataset.make_one_shot_iterator()
@@ -329,5 +311,5 @@ class Train:
                       .format(epoch, tot_loss / self.num_train_batches, validation_loss))
                 saver.save(sess, self.checkpoint_dir + "/" + self.model_name)
 
-            self.close_files()
-            print('The end of the training')
+            # self.close_files()
+            print('The end of the training at {}'.format(str(datetime.now())))
