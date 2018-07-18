@@ -22,32 +22,36 @@ import gc
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
-data_path = '/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-new_data/validation/dataset.tfrecords'  # address to save the hdf5 file
-with tf.Session() as sess:
-    feature = {'train/image': tf.FixedLenFeature([], tf.string),
-               'train/label': tf.FixedLenFeature([], tf.int64)}
-    # Create a list of filenames and pass it to a queue
-    filename_queue = tf.train.string_input_producer([data_path], num_epochs=1)
-    # Define a reader and read the next record
-    reader = tf.TFRecordReader()
-    _, serialized_example = reader.read(filename_queue)
-    # Decode the record read by the reader
-    features = tf.parse_single_example(serialized_example, features=feature)
-    # Convert the image data from string back to the numbers
-    #image = tf.decode_raw(features['train/image'], tf.float32)
-    image = tf.cast(features["train/image"], tf.float32)
+print('The end of the training at {}'.format(str(datetime.now())))
 
-    # Cast label data into int32
-    label = tf.cast(features['train/label'], tf.int32)
-    # Reshape image data into the original shape
-    image = tf.reshape(image, [21, 256, 2])
-
-    # Any preprocessing here ...
-
-    # Creates batches by randomly shuffling tensors
-    images, labels = tf.train.shuffle_batch([image, label], batch_size=10, capacity=30, num_threads=1,
-                                            min_after_dequeue=10)
+#data_path = '/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-new_data/validation/dataset.tfrecords'  # address to save the hdf5 file
+#with tf.Session() as sess:
+#    feature = {'train/image': tf.FixedLenFeature([], tf.string),
+#               'train/label': tf.FixedLenFeature([], tf.int64)}
+#    # Create a list of filenames and pass it to a queue
+#    filename_queue = tf.train.string_input_producer([data_path], num_epochs=1)
+#    # Define a reader and read the next record
+#    reader = tf.TFRecordReader()
+#    _, serialized_example = reader.read(filename_queue)
+#    # Decode the record read by the reader
+#    features = tf.parse_single_example(serialized_example, features=feature)
+#    # Convert the image data from string back to the numbers
+#    #image = tf.decode_raw(features['train/image'], tf.float32)
+#    image = tf.cast(features["train/image"], tf.float32)
+##
+#
+#    # Cast label data into int32
+#    label = tf.cast(features['train/label'], tf.int32)
+#    # Reshape image data into the original shape
+#    image = tf.reshape(image, [21, 256, 2])3
+#
+#    # Any preprocessing here ...
+#
+#    # Creates batches by randomly shuffling tensors
+#    images, labels = tf.train.shuffle_batch([image, label], batch_size=10, capacity=30, num_threads=1,
+#                                            min_after_dequeue=10)
 
 
 #f = h5py.File("imagetest.hdf5")

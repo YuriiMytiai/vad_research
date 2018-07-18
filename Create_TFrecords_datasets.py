@@ -3,7 +3,7 @@ import numpy as np
 import h5py
 import tqdm
 
-h5_filename = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-new_data/train/dataset.hdf5"
+h5_filename = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-full_spec/validation/dataset.hdf5"
 tfrec_filename = h5_filename.split('.')[0] + ".tfrecords"
 
 h5_file = h5py.File(h5_filename, 'r')
@@ -26,7 +26,7 @@ def _floats_feature(value):
 
 
 def _bytes_feature(value):
-  return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
 # open the TFRecords file

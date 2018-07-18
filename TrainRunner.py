@@ -9,10 +9,10 @@ my_datasets_on_ssd = "/home/yurii/Documents/datasets/"
 path_to_dataset_new = my_datasets_on_ssd + "h5-new_data"
 
 
-datasets_paths = [path_to_dataset_old, path_to_dataset_new]
-lr = [1e-9, 1e-7, 1e-5]
-dropout = [0.1, 0.3, 0.5, 0.7]
-reg = [1e-10, 1e-8, 1e-5, 1e-3, 1e-1, 3e-1, 5e-1, 7e-1]
+datasets_paths = [path_to_dataset_new]
+lr = [1e-7]
+dropout = [0.1]
+reg = [1e-5]
 
 for path_to_dataset in datasets_paths:
     for cur_lr in lr:
@@ -34,9 +34,23 @@ for path_to_dataset in datasets_paths:
 
                 train = Train(path_to_train_dataset=path_to_dataset + "/train",
                               path_to_validation_dataset=path_to_dataset + "/validation",
-                              batch_size=256, learning_rate=cur_lr, num_epochs=5,
+                              batch_size=256, learning_rate=cur_lr, num_epochs=40,
                               enable_regularization=True, regularization=cur_reg,
                               enable_dropout=True, dropout_keep_prob=cur_kp,
+                              weights_init=tf.initializers.variance_scaling(seed=10), validation_batch_size=1000,
+                              train_valid_freq=1000,
+                              model_name=cur_name,
+                              use_just_amplitude_spec=True, enable_debug_mode=False,
+                              num_train_examples=num_train_ex, num_validation_examples=num_valid_ex)
+                train.run_training()
+
+                cur_name = "CNN_ampl_spec_" + dataset + "_lr-" + str(cur_lr) + \
+                           "_reg-" + "disable" + "_dropout-" + "disable"
+                train = Train(path_to_train_dataset=path_to_dataset + "/train",
+                              path_to_validation_dataset=path_to_dataset + "/validation",
+                              batch_size=256, learning_rate=cur_lr, num_epochs=40,
+                              enable_regularization=False, regularization=cur_reg,
+                              enable_dropout=False, dropout_keep_prob=cur_kp,
                               weights_init=tf.initializers.variance_scaling(seed=10), validation_batch_size=1000,
                               train_valid_freq=1000,
                               model_name=cur_name,
