@@ -5,7 +5,7 @@ import math
 import soundfile as sf
 
 
-class FeatureExtractor:
+class FeatureExtractor2:
     def __init__(self, h5_filename, dataset_name='data',
                  fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
                  norm_target_rms=0.1, full_spec=False, segment_normalization=False):
@@ -53,24 +53,18 @@ class FeatureExtractor:
     def close_files(self):
         self.file.close()
 
-    def extract_features_from_wav_to_h5(self, wav_file):
-        event_file = wav_file[:-3] + 'eventlab'
-        speech_time_stamps = self.extract_labels_from_eventlab(event_file)
+    def extract_features_from_audio_to_h5(self, audio_file):
 
-        # file_fs, data = scipy.io.wavfile.read(wav_file)
-
-        # fu**ing Octave saved audio in some strange format under this version of Ubuntu,
-        # so we should open files like raw
-        data, file_fs = sf.read(wav_file, channels=1, samplerate=16000,
-                          format='RAW', subtype='PCM_16')
+        data, file_fs = sf.read(audio_file)
+        if len(data.shape) != 1:
+            data = data[:, 0]
 
         if len(data) < 1000:
-            print("invalid file " + wav_file)
+            print("invalid file " + audio_file)
             return
         elif np.max(data) == 0:
-            print("file with no data " + wav_file)
+            print("file with no data " + audio_file)
             return
-
 
         if file_fs != self.fs:
             data = librosa.resample(data, file_fs, self.fs)
@@ -78,6 +72,12 @@ class FeatureExtractor:
         k = 1.0 / np.max(data)
         data = data * k
         data = np.asarray(data)
+
+        event_file = audio_file.split('.')[0] + ".csv"
+        if "other_speech" in audio_file:
+            speech_time_stamps = self.extract_labels_from_csv(event_file)
+        elif "other_noises" in audio_file:
+            speech_time_stamps = np.asarray([(0, len(data), 0)])
 
         num_different_events = speech_time_stamps.shape[0]
         for event in range(num_different_events):
@@ -108,11 +108,11 @@ class FeatureExtractor:
 
                 start_idx = (segment + 1) * self.segment_len
 
-    def extract_labels_from_eventlab(self, event_file):
+    def extract_labels_from_csv(self, event_file):
         speech_time_stamps = []
         with open(event_file, 'r') as file:
             for line in file:
-                cells = line.split(' ')
+                cells = line.split('\t')
                 start_idx = int(float(cells[0]) * self.fs)
                 end_idx = int(float(cells[1]) * self.fs)
 

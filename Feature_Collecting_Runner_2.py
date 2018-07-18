@@ -1,5 +1,5 @@
-from DataCollectorClass import DataCollector
-from FeatureExtractorClass import FeatureExtractor
+from Data_Collector_2 import DataCollector2
+from Feature_Extractor_2 import FeatureExtractor2
 import tqdm
 import threading
 
@@ -11,10 +11,11 @@ def print_dataset_info(num_speech_events, num_nonspeech_events):
     print('Nonspeech events: {} examples, {:.2f}%'.format(num_nonspeech_events, num_nonspeech_events / num_events * 100))
 
 
-path_to_wavs = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/qut-noise-timit"
-path_to_h5 = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-full_spec"
+path_to_speech = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/other_speech"
+path_to_noise = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/other_noises"
+path_to_h5 = "/media/yurii/021f412c-0a12-4716-aaa2-e1d8c03e4188/datasets/h5-new_data"
 
-data = DataCollector(path_to_wavs, filter_negative_SNR=True)
+data = DataCollector2(speech_path=path_to_speech, noise_path=path_to_noise)
 data.load_data()
 data.preprocess_files()
 
@@ -28,27 +29,27 @@ h5filename_test = path_to_h5 + '/test/' + 'dataset.hdf5'
 
 
 def train_feature_extractor(h5filename_train, data):
-    feature_extractor = FeatureExtractor(h5filename_train, full_spec=True, segment_normalization=False)
+    feature_extractor = FeatureExtractor2(h5filename_train, full_spec=True, segment_normalization=False)
     for i in tqdm.tqdm(range(train_dataset_size)):
-        feature_extractor.extract_features_from_wav_to_h5(data.data_set_files_list["train_wavs"][i])
+        feature_extractor.extract_features_from_audio_to_h5(data.data_set_files_list["train_wavs"][i])
     feature_extractor.close_files()
     print('Train dataset:')
     print_dataset_info(feature_extractor.num_speech_events, feature_extractor.num_nonspeech_events)
 
 
 def validation_feature_extractor(h5filename_validation, data):
-    feature_extractor = FeatureExtractor(h5filename_validation, full_spec=True, segment_normalization=False)
+    feature_extractor = FeatureExtractor2(h5filename_validation, full_spec=True, segment_normalization=False)
     for i in tqdm.tqdm(range(validation_dataset_size)):
-        feature_extractor.extract_features_from_wav_to_h5(data.data_set_files_list["validation_wavs"][i])
+        feature_extractor.extract_features_from_audio_to_h5(data.data_set_files_list["validation_wavs"][i])
     feature_extractor.close_files()
     print('Validation dataset:')
     print_dataset_info(feature_extractor.num_speech_events, feature_extractor.num_nonspeech_events)
 
 
 def test_feature_extractor(h5filename_test, data):
-    feature_extractor = FeatureExtractor(h5filename_test, full_spec=True, segment_normalization=False)
+    feature_extractor = FeatureExtractor2(h5filename_test, full_spec=True, segment_normalization=False)
     for i in tqdm.tqdm(range(test_dataset_size)):
-        feature_extractor.extract_features_from_wav_to_h5(data.data_set_files_list["test_wavs"][i])
+        feature_extractor.extract_features_from_audio_to_h5(data.data_set_files_list["test_wavs"][i])
     feature_extractor.close_files()
     print('Test dataset:')
     print_dataset_info(feature_extractor.num_speech_events, feature_extractor.num_nonspeech_events)

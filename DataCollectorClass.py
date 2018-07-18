@@ -8,16 +8,27 @@ class DataCollector:
     labels_list = []
     data_set_files_list = {}
 
-    def __init__(self, path):
+    def __init__(self, path, filter_negative_SNR=True):
         if not os.path.isdir(path):
             raise ValueError("The path is not a directory or does not exist")
         self.path_to_data = path
+        self.filt=True
 
     def load_data(self):
         for root, dirs, files in os.walk(self.path_to_data):
             for file in files:
                 if file.endswith(".wav"):
-                    self.wavs_list.append(os.path.join(root, file))
+
+                    # here we want to filter wavs with SNR lower than 0:
+                    if self.filt:
+                        if "_n-05_" in file:
+                            continue
+                        elif "_n-10_" in file:
+                            continue
+                        else:
+                            self.wavs_list.append(os.path.join(root, file))
+                    else:
+                        self.wavs_list.append(os.path.join(root, file))
 
     def preprocess_files(self, part_of_train_data=0.8):
         random.shuffle(self.wavs_list)
