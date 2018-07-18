@@ -7,8 +7,8 @@ from datetime import datetime
 
 class Train:
 
-    def __init__(self, path_to_train_dataset="D:\\h5dataset\\train",
-                 path_to_validation_dataset="D:\\h5dataset\\validation",
+    def __init__(self, path_to_train_dataset,
+                 path_to_validation_dataset,
                  batch_size=10, validation_batch_size=500, num_epochs=10, num_classes=2,
                  learning_rate=0.0001, regularization=0.01, enable_debug_mode=False,
                  enable_regularization=False, weights_init=tf.initializers.random_normal,
