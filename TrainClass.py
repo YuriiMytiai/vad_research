@@ -54,9 +54,9 @@ class Train:
 
     def check_paths(self):
         if not os.path.isdir(self.path_to_train_dataset):
-            raise FileExistsError("Train path: {} do not exist!".format(self.path_to_train_dataset))
+            raise FileExistsError("Train path: {} does not exist!".format(self.path_to_train_dataset))
         if not os.path.isdir(self.path_to_validation_dataset):
-            raise FileExistsError("Validation path: {} do not exist!".format(self.path_to_train_dataset))
+            raise FileExistsError("Validation path: {} does not exist!".format(self.path_to_train_dataset))
         if not os.path.isdir(self.checkpoint_dir):
             try:
                 os.makedirs(self.checkpoint_dir)
@@ -207,7 +207,7 @@ class Train:
         # Predictions
         # y_pred = tf.argmax(out, axis=1)
         # y_pred = tf.expand_dims(y_pred, 0)
-        # pred_probas = tf.nn.softmax(out)
+        pred_probas = tf.nn.softmax(out)
         logits_out_layer = tf.layers.dense(inputs=out, units=self.n_classes)
 
         # Define loss and optimizer
@@ -241,7 +241,7 @@ class Train:
                                                   filename_suffix=self.model_name)
         train_writer.add_graph(tf.get_default_graph())
 
-        return train_op, loss, accuracy, merged, train_writer, validation_writer
+        return train_op, loss, accuracy, merged, train_writer, validation_writer, pred_probas
 
     def validation_loop(self, sess, loss, accuracy, merged, epoch, validation_writer):
         num_correct = 0
@@ -267,7 +267,7 @@ class Train:
         input_size = kwargs.get('input_size', size_param)
         _, train_iter, _, validation_iter = self.build_datasets()
         train_op, loss, accuracy,\
-            merged, train_writer, validation_writer = self.build_classifier(input_size, train_iter, validation_iter)
+            merged, train_writer, validation_writer, _ = self.build_classifier(input_size, train_iter, validation_iter)
 
         print('Configuring session...\n')
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
@@ -309,7 +309,7 @@ class Train:
                                                              epoch, validation_writer)
                 print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
                       .format(epoch, tot_loss / self.num_train_batches, validation_loss))
-                saver.save(sess, self.checkpoint_dir + "/" + self.model_name)
+                saver.save(sess, self.checkpoint_dir + "/" + self.model_name + ".ckpt")
 
             # self.close_files()
             print('The end of the training at {}'.format(str(datetime.now())))

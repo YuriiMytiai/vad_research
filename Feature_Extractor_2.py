@@ -8,7 +8,7 @@ import soundfile as sf
 class FeatureExtractor2:
     def __init__(self, h5_filename, dataset_name='data',
                  fs=16000, fft_size=512, fft_overlap=128, segment_len=8000, window=True,
-                 norm_target_rms=0.1, full_spec=False, segment_normalization=False):
+                 norm_target_rms=0.1, full_spec=False, segment_normalization=False, evaluation_mode=False):
 
         self.h5_filename = h5_filename
         self.dataset_name = dataset_name
@@ -23,16 +23,20 @@ class FeatureExtractor2:
         self.spectrogram_high = math.ceil(fft_size / 2)
         self.full_spec = full_spec
         self.segm_norm = segment_normalization
+        self.eval = evaluation_mode
 
         self.num_speech_events = 0
         self.num_nonspeech_events = 0
+        self.audio_len = 0
 
         self.file = h5py.File(self.h5_filename)
-        self.labels_dataset = self.file.create_dataset(self.label_dataset_name,
-                                                       (1, 1),
-                                                       maxshape=(None, 1),
-                                                       chunks=(1, 1),
-                                                       compression="gzip")
+
+        if not self.eval:
+            self.labels_dataset = self.file.create_dataset(self.label_dataset_name,
+                                                           (1, 1),
+                                                           maxshape=(None, 1),
+                                                           chunks=(1, 1),
+                                                           compression="gzip")
         if full_spec:
             self.num_channels = 2
         else:
@@ -59,7 +63,8 @@ class FeatureExtractor2:
         if len(data.shape) != 1:
             data = data[:, 0]
 
-        if len(data) < 1000:
+        self.audio_len = len(data)
+        if self.audio_len < 1000:
             print("invalid file " + audio_file)
             return
         elif np.max(data) == 0:
@@ -186,3 +191,46 @@ class FeatureExtractor2:
         plt.title('Mel spectrogram')
         plt.tight_layout()
         plt.show()
+
+    def add_example_to_h5_eval(self, example):
+        self.features_dataset.resize((self.features_dataset.shape[0] + 1, self.spectrogram_len,
+                                      self.spectrogram_high, self.num_channels))
+        self.features_dataset[-1, :] = example
+
+    def extract_features_from_audio_to_h5_evaluation(self, audio_file):
+
+        data, file_fs = sf.read(audio_file)
+        if len(data.shape) != 1:
+            data = data[:, 0]
+
+        self.audio_len = len(data)
+        if self.audio_len < 1000:
+            print("invalid file " + audio_file)
+            return
+        elif np.max(data) == 0:
+            print("file with no data " + audio_file)
+            return
+
+        if file_fs != self.fs:
+            data = librosa.resample(data, file_fs, self.fs)
+        data = data - np.mean(data)
+        k = 1.0 / np.max(data)
+        data = data * k
+        data = np.asarray(data)
+
+        num_segments = len(data) // self.segment_len
+
+        start_idx = 0
+        for segment in range(num_segments):
+            end_idx = start_idx + self.segment_len
+
+            buffered_data_segment = self.buffer_signal(data[start_idx:end_idx])
+            if self.segm_norm:
+                normalized_data = self.normalization(buffered_data_segment)
+            else:
+                normalized_data = buffered_data_segment
+            spectrogram = self.calculate_spectrum(normalized_data)
+
+            self.add_example_to_h5_eval(spectrogram)
+
+            start_idx = (segment + 1) * self.segment_len
