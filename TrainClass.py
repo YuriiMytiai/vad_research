@@ -146,6 +146,53 @@ class Train:
 
         return train_dataset, train_iter, validation_dataset, validation_iter
 
+    @staticmethod
+    def model_architecture(x_reshaped, weights_initializer, regularizer, enable_dropout,
+                           keep_prob, is_training, n_classes):
+        # Convolution Layer with 50 filters and a kernel size of 5
+        conv1 = tf.layers.conv2d(x_reshaped, filters=32, kernel_size=[5, 5], activation=tf.nn.relu, name='conv1',
+                                 kernel_initializer=weights_initializer,
+                                 kernel_regularizer=regularizer)
+
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
+
+        # Convolution Layer with 50 filters and a kernel size of 5
+        conv2 = tf.layers.conv2d(conv1, filters=50, kernel_size=[5, 5], activation=tf.nn.relu, name='conv2',
+                                 kernel_initializer=weights_initializer,
+                                 kernel_regularizer=regularizer)
+
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
+
+        # Flatten the data to a 1-D vector for the fully connected layer
+        fc1 = tf.contrib.layers.flatten(conv2)
+        fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
+                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                weights_initializer=weights_initializer,
+                                                weights_regularizer=regularizer,
+                                                activation_fn=tf.nn.relu)
+
+        # Fully connected layer (in tf contrib folder for now)
+        # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
+
+        # Output layer, class prediction
+        # out = tf.layers.dense(fc1, self.n_classes, name='out')
+
+        # Let's add dropout here
+        if enable_dropout:
+            drop_out = tf.contrib.layers.dropout(fc1, keep_prob=keep_prob, is_training=is_training)
+        else:
+            drop_out = fc1
+
+        # One more FC layer
+        out = tf.contrib.layers.fully_connected(drop_out, num_outputs=n_classes,
+                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
+                                                weights_initializer=weights_initializer,
+                                                weights_regularizer=regularizer,
+                                                activation_fn=None)
+        return out
+
     def build_classifier(self, input_size, train_iter, validation_iter):
 
         x, y = tf.cond(tf.equal(self.is_training, tf.constant(True)),
@@ -161,48 +208,10 @@ class Train:
             regularizer = tf.contrib.layers.l2_regularizer(scale=self.regularization)
         else:
             regularizer = None
-        # Convolution Layer with 50 filters and a kernel size of 5
-        conv1 = tf.layers.conv2d(x_reshaped, filters=32, kernel_size=[5, 5], activation=tf.nn.relu, name='conv1',
-                                 kernel_initializer=self.weights_initializer,
-                                 kernel_regularizer=regularizer)
 
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
-
-        # Convolution Layer with 50 filters and a kernel size of 5
-        conv2 = tf.layers.conv2d(conv1, filters=50, kernel_size=[5, 5], activation=tf.nn.relu, name='conv2',
-                                 kernel_initializer=self.weights_initializer,
-                                 kernel_regularizer=regularizer)
-
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
-
-        # Flatten the data to a 1-D vector for the fully connected layer
-        fc1 = tf.contrib.layers.flatten(conv2)
-        fc1 = tf.contrib.layers.fully_connected(fc1, num_outputs=500,
-                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
-                                                weights_initializer=self.weights_initializer,
-                                                weights_regularizer=regularizer,
-                                                activation_fn=tf.nn.relu)
-
-        # Fully connected layer (in tf contrib folder for now)
-        # = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_activ')
-
-        # Output layer, class prediction
-        # out = tf.layers.dense(fc1, self.n_classes, name='out')
-
-        # Let's add dropout here
-        if self.enable_dropout:
-            drop_out = tf.contrib.layers.dropout(fc1, keep_prob=self.keep_prob, is_training=self.is_training)
-        else:
-            drop_out = fc1
-
-        # One more FC layer
-        out = tf.contrib.layers.fully_connected(drop_out, num_outputs=self.n_classes,
-                                                biases_initializer=tf.contrib.layers.xavier_initializer(),
-                                                weights_initializer=self.weights_initializer,
-                                                weights_regularizer=regularizer,
-                                                activation_fn=None)
+        # we need static method with model architecture cause in this case we can use this graph from Evaluator class
+        out = self.model_architecture(x_reshaped, self.weights_initializer, regularizer, self.enable_dropout,
+                                      self.keep_prob, self.is_training, self.n_classes)
 
         # Predictions
         # y_pred = tf.argmax(out, axis=1)

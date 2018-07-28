@@ -30,10 +30,10 @@ for path_to_dataset in datasets_paths:
 
                 train = Train(path_to_train_dataset=path_to_dataset + "/train",
                               path_to_validation_dataset=path_to_dataset + "/validation",
-                              batch_size=400, learning_rate=cur_lr, num_epochs=5,
+                              batch_size=400, learning_rate=cur_lr, num_epochs=15,
                               enable_regularization=True, regularization=cur_reg,
                               enable_dropout=True, dropout_keep_prob=cur_kp,
-                              weights_init=tf.initializers.variance_scaling(seed=10), validation_batch_size=1000,
+                              weights_init=tf.initializers.variance_scaling(), validation_batch_size=1000,
                               train_valid_freq=1000,
                               model_name=cur_name,
                               use_just_amplitude_spec=True, enable_debug_mode=False,
