@@ -8,7 +8,7 @@ proc = EvaluationProcessing(audio_filename)
 tfrec_filename, num_exs = proc.run()
 
 # run evaluation
-checkpoint_dir = "./checkpoints/CNN_ampl_spec_new_data_lr-1e-05_reg-1e-05_dropout-0.5.ckpt"
+checkpoint_dir = "./checkpoints/CNN_ampl_spec_new_data_lr-1e-05_reg-0.001_dropout-0.5.ckpt"
 evaluator = Evaluator(tfrec_filename, checkpoint_dir, num_examples=num_exs)
 overlapped_predicts = evaluator.run_evaluation()
 

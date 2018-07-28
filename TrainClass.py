@@ -291,7 +291,7 @@ class Train:
             sess.run(tf.global_variables_initializer())
 
             # init saver
-            saver = tf.train.Saver()
+            saver = tf.train.Saver(max_to_keep=1000)
 
             print("Validation before training:\n")
             sess, validation_loss = self.validation_loop(sess, loss, accuracy, merged,
@@ -318,7 +318,7 @@ class Train:
                                                              epoch, validation_writer)
                 print("Epoch: {}, Train Loss: {:.6e}, Validation Loss: {:.3f}\n"
                       .format(epoch, tot_loss / self.num_train_batches, validation_loss))
-                saver.save(sess, self.checkpoint_dir + "/" + self.model_name + ".ckpt")
+                saver.save(sess, self.checkpoint_dir + "/" + self.model_name + "_epoch_" + str(epoch) + ".ckpt")
 
             # self.close_files()
             print('The end of the training at {}'.format(str(datetime.now())))
