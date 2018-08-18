@@ -85,6 +85,7 @@ class EvaluationProcessing:
 
     def write_csv(self, sig_len, csv_filename):
         labels = self.labels
+        labels = np.append(labels, [-1])
         with open(csv_filename, 'w', newline='') as file:
             writer = csv.writer(file, delimiter="\t")
             if np.sum(labels) == 0:

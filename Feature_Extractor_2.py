@@ -73,6 +73,7 @@ class FeatureExtractor2:
 
         if file_fs != self.fs:
             data = librosa.resample(data, file_fs, self.fs)
+            self.audio_len = len(data)
         data = data - np.mean(data)
         k = 1.0 / np.max(data)
         data = data * k
@@ -213,12 +214,13 @@ class FeatureExtractor2:
 
         if file_fs != self.fs:
             data = librosa.resample(data, file_fs, self.fs)
+            self.audio_len = len(data)
         data = data - np.mean(data)
         k = 1.0 / np.max(data)
         data = data * k
         data = np.asarray(data)
 
-        num_segments = len(data) // self.segment_len
+        num_segments = len(data) // (self.segment_len - self.fft_overlap)
 
         start_idx = 0
         for segment in range(num_segments):
@@ -233,4 +235,4 @@ class FeatureExtractor2:
 
             self.add_example_to_h5_eval(spectrogram)
 
-            start_idx = (segment + 1) * self.segment_len
+            start_idx = (segment + 1) * (self.segment_len - self.fft_overlap)

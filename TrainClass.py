@@ -281,7 +281,7 @@ class Train:
         print('Configuring session...\n')
         config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
         # config.gpu_options.allow_growth = True
-        # config.gpu_options.per_process_gpu_memory_fraction = 0.9
+        # config.gpu_options.per_process_gpu_memory_fraction = 0.95
         # tf.logging.set_verbosity(tf.logging.ERROR)
         
         with tf.Session(config=config) as sess:
